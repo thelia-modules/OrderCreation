@@ -1,0 +1,45 @@
+{form name="admin.order.creation.create.form"}
+<tr id="tr-{$position}" class="title-without-tabs">
+    <td colspan="2">
+        <table class="table table-striped table-condensed">
+            <caption>
+                <div class="col-md-11"></div>
+                <div class="col-md-1">
+                    <a class="btn btn-default btn-xs item-ajax-delete" data-toggle="modal" title="{intl l='Remove' d='ordercreation'}" data-target="tr-{$position}" href="#">
+                        <i class="glyphicon glyphicon-trash"></i>
+                    </a>
+                </div>
+            </caption>
+            <tbody>
+            <tr>
+                <td>
+                    <label for="category{$position}" class="control-label">{intl l="Category" d="ordercreation"}</label>
+                    <select id="category{$position}" required="required" class="form-control category-list" data-target="item{$position}" data-destination="tr-item{$position}">
+                        <option>{intl l="Choose"}</option>
+                        {loop name="cat-parent" type="category-tree" category="0" visible="*" product="0"}
+                        <option value="{$ID}" style="padding-left: {3 + $LEVEL * 20}px">{$TITLE}</option>
+                        {/loop}
+                    </select>
+                </td>
+                <td></td>
+            </tr>
+            <tr id="tr-item{$position}" class="hide">
+                <td>
+                    {form_field form=$form field='product_sale_element_id' value_key=$position}
+                        <label for="item{$position}" class="control-label">{$label}</label>
+                        <select id="item{$position}" class="form-control" name="{$name}"></select>
+                    {/form_field}
+                </td>
+                <td>
+                    {form_field form=$form field='quantity' value_key=$position}
+                        <label for="quantity{$position}" class="control-label">{$label}</label>
+                        <input type="text" class="form-control" name="{$name}" value="1">
+                    {/form_field}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </td>
+    <td></td>
+</tr>
+{/form}

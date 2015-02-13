@@ -1,0 +1,98 @@
+{form name="admin.order.creation.create.form"}
+    {* Capture the dialog body, to pass it to the generic dialog *}
+    {capture "order_create_dialog"}
+
+        {form_hidden_fields form=$form}
+
+        {form_field form=$form field='customer_id'}
+            <input type="hidden" name="{$name}" value="{$ID}">
+        {/form_field}
+
+        <table class="table">
+            <thead>
+            <tr>
+                <td>
+                    {form_field form=$form field='delivery_address_id'}
+                    <div class="form-group {if $error}has-error{/if}">
+                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
+
+                        <select name="{$name}" id="{$label_attr.for}" class="form-control">
+                            {loop type="address" name="address-delivery" customer=$ID}
+                            <option value="{$ID}">{$LABEL}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                    {/form_field}
+                </td>
+                <td>
+                    {form_field form=$form field='invoice_address_id'}
+                    <div class="form-group {if $error}has-error{/if}">
+                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
+
+                        <select name="{$name}" id="{$label_attr.for}" class="form-control">
+                            {loop type="address" name="address-invoice" customer=$ID}
+                            <option value="{$ID}">{$LABEL}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                    {/form_field}
+                </td>
+            </tr>
+            </thead>
+            <tbody id="body-order-cart">
+
+            </tbody>
+            <tfoot>
+            <tr>
+                <td colspan="2">
+                    <a id="add-cart-item" class="btn btn-default btn-primary action-btn" title="{intl l='Add product' d='ordercreation'}" href="#" data-toggle="modal">
+                        <span>{intl l="Add product" d="ordercreation"}</span>
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    {form_field form=$form field='delivery_module_id'}
+                    <div class="form-group {if $error}has-error{/if}">
+                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
+
+                        <select name="{$name}" id="{$label_attr.for}" class="form-control">
+                            {loop type="module" name="module-delivery" module_type="2" active="1"}
+                            <option value="{$ID}">{$TITLE}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                    {/form_field}
+                </td>
+                <td>
+                    {form_field form=$form field='payment_module_id'}
+                    <div class="form-group {if $error}has-error{/if}">
+                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
+
+                        <select name="{$name}" id="{$label_attr.for}" class="form-control">
+                            {loop type="module" name="module-payment" module_type="3" active="1"}
+                            <option value="{$ID}">{$TITLE}</option>
+                            {/loop}
+                        </select>
+                    </div>
+                    {/form_field}
+                </td>
+            </tr>
+            </tfoot>
+        </table>
+
+    {/capture}
+    {include
+        file = "includes/generic-create-dialog.html"
+
+        dialog_id    = "order_create_dialog"
+        dialog_title = {intl l="Generate a new order" d="ordercreation"}
+        dialog_body  = {$smarty.capture.order_create_dialog nofilter}
+
+        dialog_ok_label     = {intl l="Save"}
+
+        form_action        = {url path='/admin/module/OrderCreation/order/create'}
+        form_enctype       = {form_enctype form=$form}
+        form_error_message = $form_error_message
+    }
+{/form}

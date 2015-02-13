@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+    <fullnamespace>OrderCreation\OrderCreation</fullnamespace>
+    <descriptive locale="en_US">
+        <title>Order creation in BackOffice</title>
+    </descriptive>
+    <descriptive locale="fr_FR">
+        <title>Creation de commande dans le BackOffice</title>
+    </descriptive>
+    <version>1.0</version>
+    <author>
+        <name>gbarral</name>
+        <email>gbarral@openstudio.fr</email>
+    </author>
+    <type>classic</type>
+    <thelia>2.1.1</thelia>
+    <stability>other</stability>
+</module>

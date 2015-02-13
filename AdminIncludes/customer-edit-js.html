@@ -1,0 +1,104 @@
+<script>
+    var nb_products = 0;
+    //Automatic product add during order creation
+    $('#add-cart-item').click(function(ev) {
+        $.get("{url path='/admin/module/OrderCreation/add-item'}/"+nb_products, function(data){
+            nb_products += 1;
+            $('#body-order-cart').append(data);
+        },'html');
+    });
+
+    $('#body-order-cart').on('change', '.category-list', function(clickEvent){
+        var target_id = $(this).data('target');
+        var target_destination_id = $(this).data('destination');
+
+        $.ajax({
+            url      : '{url path="/admin/module/OrderCreation/0/list-products/"}' + $(this).val() + '.xml',
+            type     : 'get',
+            dataType : 'json',
+            success  : function(json) {
+                $('#'+target_id).empty();
+
+                var have_content = false;
+                var oldValue = null;
+                var isOptGroupOpen = false;
+                var listOfOptions = "";
+
+                $.each(json, function(idx, value) {
+
+                    if (oldValue == null) {
+                        oldValue = value;
+                    } else {
+
+                        if (oldValue.product_id == value.product_id) {
+
+                            if (isOptGroupOpen == false) {
+                                listOfOptions +=
+                                    '<optgroup label="' + oldValue.title + '">' +
+                                        '<option value="' + oldValue.id + '">' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>'
+                                ;
+
+                                isOptGroupOpen = true;
+                            } else {
+                                listOfOptions +=
+                                    '<option value="' + oldValue.id + '">' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>'
+                                ;
+                            }
+                        } else {
+
+                            if (isOptGroupOpen == true) {
+                                listOfOptions +=
+                                    '</optgroup>'
+                                ;
+                            }
+
+                            listOfOptions +=
+                                '<option value="' + oldValue.id + '">' + oldValue.title + '(' + oldValue.quantity + ')' + '</option>'
+                            ;
+                        }
+
+                        oldValue = value;
+
+                    }
+
+
+
+                    //$('#'+target_id).append($('<option>').text(value.title+" ("+value.quantity+")").attr('value', value.id));
+                    have_content = true;
+                });
+
+
+
+                if (isOptGroupOpen == true) {
+                    listOfOptions +=
+                            '<option value="' + oldValue.id + '">' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>' +
+                        '</optgroup>'
+                    ;
+                } else {
+                    listOfOptions +=
+                        '<option value="' + oldValue.id + '">' + oldValue.title + '(' + oldValue.quantity + ')' + '</option>'
+                    ;
+                }
+                $('#'+target_id).append(listOfOptions);
+                if (have_content) {
+                    $('#'+target_destination_id).removeClass('hide');
+                }
+                else {
+                    $('#'+target_destination_id).addClass('hide');
+                }
+            }
+        });
+    });
+
+    $('#body-order-cart').on('click', '.item-ajax-delete', function(clickEvent){
+        $('#'+$(this).data('target')).remove();
+    });
+
+    $('#type_order_form').change(function(ev) {
+        if($(this).val() == 2){
+            $('#type_order_info').removeClass('hide');
+        }else{
+            $('#type_order_info').addClass('hide');
+        }
+    });
+</script>
