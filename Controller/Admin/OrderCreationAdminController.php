@@ -12,6 +12,7 @@ use OrderCreation\EventListeners\OrderCreationListener;
 use OrderCreation\Form\OrderCreationCreateForm;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\Join;
+use Propel\Runtime\Propel;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Thelia\Controller\Admin\BaseAdminController;
 use Thelia\Core\Security\AccessManager;
@@ -20,6 +21,7 @@ use Thelia\Form\CustomerUpdateForm;
 use Thelia\Model\Base\CustomerQuery;
 use Thelia\Model\Base\ProductSaleElementsQuery;
 use Thelia\Model\Customer;
+use Thelia\Model\Map\OrderTableMap;
 use Thelia\Model\Map\ProductCategoryTableMap;
 use Thelia\Model\Map\ProductI18nTableMap;
 use Thelia\Model\Map\ProductSaleElementsTableMap;
@@ -43,6 +45,9 @@ class OrderCreationAdminController extends BaseAdminController
             return $response;
         }
 
+        $con = Propel::getConnection(OrderTableMap::DATABASE_NAME);
+        $con->beginTransaction();
+
         $form = new OrderCreationCreateForm($this->getRequest());
 
         try {
@@ -64,12 +69,18 @@ class OrderCreationAdminController extends BaseAdminController
 
             $this->dispatch(OrderCreationListener::ADMIN_ORDER_CREATE, $event);
 
+            if (null != $event->getResponse()) {
+                $con->commit();
+                return $event->getResponse();
+            }
+
             //Don't forget to fill the Customer form
             if (null != $customer = CustomerQuery::create()->findPk($formValidate->get('customer_id')->getData())) {
                 $customerForm = $this->hydrateCustomerForm($customer);
                 $this->getParserContext()->addForm($customerForm);
             }
 
+            $con->commit();
             return RedirectResponse::create(
                 URL::getInstance()->absoluteUrl(
                     '/admin/customer/update?customer_id='.$formValidate->get('customer_id')->getData()
@@ -77,6 +88,7 @@ class OrderCreationAdminController extends BaseAdminController
             );
 
         } catch (\Exception $e) {
+            $con->rollBack();
             $form->setErrorMessage($e->getMessage());
 
             $this->getParserContext()
@@ -94,9 +106,9 @@ class OrderCreationAdminController extends BaseAdminController
             }
 
             return $this->render('customer-edit', array(
-                'customer_id' => $this->getRequest()->request->get('admin_order_create')['customer_id'],
-                "order_creation_error" => $e->getMessage()
-            ));
+                    'customer_id' => $this->getRequest()->request->get('admin_order_create')['customer_id'],
+                    "order_creation_error" => $e->getMessage()
+                ));
         }
     }
 

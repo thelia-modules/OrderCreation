@@ -13,8 +13,10 @@ use OrderCreation\Event\OrderCreationEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Thelia\Core\Event\Order\OrderEvent;
 use Thelia\Core\Event\Order\OrderManualEvent;
+use Thelia\Core\Event\Order\OrderPaymentEvent;
 use Thelia\Core\Event\TheliaEvents;
 use Thelia\Core\HttpFoundation\Request;
+use Thelia\Core\HttpFoundation\Session\Session;
 use Thelia\Model\Base\AddressQuery;
 use Thelia\Model\Base\CustomerQuery;
 use Thelia\Model\Base\ProductSaleElementsQuery;
@@ -126,9 +128,9 @@ class OrderCreationListener implements EventSubscriberInterface
 
                 /** @var \Thelia\Model\ProductPrice $productPrice */
                 if (null != $productPrice = ProductPriceQuery::create()
-                    ->filterByProductSaleElementsId($productSaleElements->getId())
-                    ->filterByCurrencyId($currency->getDefaultCurrency()->getId())
-                    ->findOne()) {
+                        ->filterByProductSaleElementsId($productSaleElements->getId())
+                        ->filterByCurrencyId($currency->getDefaultCurrency()->getId())
+                        ->findOne()) {
 
                     $cartItem = new CartItem();
                     $cartItem
@@ -183,8 +185,28 @@ class OrderCreationListener implements EventSubscriberInterface
             $customer
         );
 
+        $this->request->getSession()->set("thelia.cart_id", $cart->getId());
+
 
         $event->getDispatcher()->dispatch(TheliaEvents::ORDER_CREATE_MANUAL, $orderManualEvent);
+
+        $event->getDispatcher()->dispatch(
+            TheliaEvents::ORDER_BEFORE_PAYMENT,
+            new OrderEvent($orderManualEvent->getPlacedOrder())
+        );
+
+        /* but memorize placed order */
+        $orderEvent->setOrder(new Order());
+        $orderEvent->setPlacedOrder($orderManualEvent->getPlacedOrder());
+
+        /* call pay method */
+        $payEvent = new OrderPaymentEvent($orderManualEvent->getPlacedOrder());
+
+        $event->getDispatcher()->dispatch(TheliaEvents::MODULE_PAY, $payEvent);
+
+        if ($payEvent->hasResponse()) {
+            $event->setResponse($payEvent->getResponse());
+        }
 
         $event->setPlacedOrder($orderManualEvent->getPlacedOrder());
         $event->getDispatcher()->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
