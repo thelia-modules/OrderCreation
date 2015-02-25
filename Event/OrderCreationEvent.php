@@ -44,6 +44,8 @@ class OrderCreationEvent extends ActionEvent
     /** @var  \Thelia\Model\Order $customerId */
     protected $placedOrder;
 
+    protected $response;
+
     public function __construct()
     {
         //
@@ -247,5 +249,25 @@ class OrderCreationEvent extends ActionEvent
     public function getQuantities()
     {
         return $this->quantities;
+    }
+
+    /**
+     * @param mixed $response
+     *
+     * @return OrderCreationEvent
+     */
+    public function setResponse($response)
+    {
+        $this->response = $response;
+
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getResponse()
+    {
+        return $this->response;
     }
 }
