@@ -194,7 +194,9 @@ class OrderCreationListener implements EventSubscriberInterface
             $this->request->getSession()->setCustomerUser($oldCustomer);
 
             //And fill his cart
-            $this->request->getSession()->set("thelia.cart_id", $oldCart->getId());
+            if ($oldCart != null) {
+                $this->request->getSession()->set("thelia.cart_id", $oldCart->getId());
+            }
         } else {
             $this->request->getSession()->clearCustomerUser();
         }
