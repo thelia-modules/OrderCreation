@@ -62,6 +62,8 @@ class OrderCreationAdminController extends BaseAdminController
                 ->setQuantities($formValidate->get('quantity')->getData())
             ;
 
+            $event->setDispatcher($this->getDispatcher());
+            
             $this->dispatch(OrderCreationListener::ADMIN_ORDER_CREATE, $event);
 
             //Don't forget to fill the Customer form
