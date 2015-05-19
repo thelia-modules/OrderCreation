@@ -26,6 +26,7 @@ use Thelia\Model\Currency;
 use Thelia\Model\Lang;
 use Thelia\Model\ModuleQuery;
 use Thelia\Model\Order;
+use Thelia\Model\OrderPostage;
 use Thelia\Model\OrderStatusQuery;
 use Thelia\Model\ProductPriceQuery;
 
@@ -85,7 +86,9 @@ class OrderCreationListener implements EventSubscriberInterface
         $paymentModule = ModuleQuery::create()->findPk($event->getPaymentModuleId());
 
         $moduleInstance = $deliveryModule->getModuleInstance($event->getContainer());
-        $postage = $moduleInstance->getPostage($deliveryAddress->getCountry());
+        $postage = OrderPostage::loadFromPostage(
+            $moduleInstance->getPostage($deliveryAddress->getCountry())
+        );
 
         /** @var \Thelia\Model\Currency $currency */
         $currency = Currency::getDefaultCurrency();
