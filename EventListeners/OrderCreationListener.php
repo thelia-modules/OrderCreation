@@ -85,11 +85,6 @@ class OrderCreationListener implements EventSubscriberInterface
         /** @var \Thelia\Model\Module $paymentModule */
         $paymentModule = ModuleQuery::create()->findPk($event->getPaymentModuleId());
 
-        $moduleInstance = $deliveryModule->getModuleInstance($event->getContainer());
-        $postage = OrderPostage::loadFromPostage(
-            $moduleInstance->getPostage($deliveryAddress->getCountry())
-        );
-
         /** @var \Thelia\Model\Currency $currency */
         $currency = Currency::getDefaultCurrency();
         $lang = new Lang();
@@ -107,15 +102,6 @@ class OrderCreationListener implements EventSubscriberInterface
             ->setChoosenDeliveryAddress($deliveryAddress)
             ->setChoosenInvoiceAddress($invoiceAddress)
         ;
-
-        $orderEvent = new OrderEvent($order);
-
-        $orderEvent->setDeliveryAddress($deliveryAddress->getId());
-        $orderEvent->setInvoiceAddress($invoiceAddress->getId());
-
-        $orderEvent->setPostage($postage);
-        $orderEvent->setDeliveryModule($deliveryModule->getId());
-        $orderEvent->setPaymentModule($paymentModule->getId());
 
         $cart = new Cart();
         $cart->setToken(uniqid("createorder", true))
@@ -165,6 +151,18 @@ class OrderCreationListener implements EventSubscriberInterface
         $this->request->getSession()->setCustomerUser($customer);
 
         $this->request->getSession()->set("thelia.cart_id", $cart->getId());
+
+        $orderEvent = new OrderEvent($order);
+        $orderEvent->setDeliveryAddress($deliveryAddress->getId());
+        $orderEvent->setInvoiceAddress($invoiceAddress->getId());
+
+        $moduleInstance = $deliveryModule->getModuleInstance($event->getContainer());
+        $postage = OrderPostage::loadFromPostage(
+            $moduleInstance->getPostage($deliveryAddress->getCountry())
+        );
+        $orderEvent->setPostage($postage);
+        $orderEvent->setDeliveryModule($deliveryModule->getId());
+        $orderEvent->setPaymentModule($paymentModule->getId());
 
         $event->getDispatcher()->dispatch(TheliaEvents::ORDER_SET_DELIVERY_ADDRESS, $orderEvent);
         $event->getDispatcher()->dispatch(TheliaEvents::ORDER_SET_INVOICE_ADDRESS, $orderEvent);
