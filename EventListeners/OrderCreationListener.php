@@ -160,7 +160,9 @@ class OrderCreationListener implements EventSubscriberInterface
         $postage = OrderPostage::loadFromPostage(
             $moduleInstance->getPostage($deliveryAddress->getCountry())
         );
-        $orderEvent->setPostage($postage);
+        $orderEvent->setPostage($postage->getAmount());
+        $orderEvent->setPostageTax($postage->getAmountTax());
+        $orderEvent->setPostageTaxRuleTitle($postage->getTaxRuleTitle());
         $orderEvent->setDeliveryModule($deliveryModule->getId());
         $orderEvent->setPaymentModule($paymentModule->getId());
 
