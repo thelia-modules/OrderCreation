@@ -18,6 +18,7 @@ use Thelia\Controller\Admin\BaseAdminController;
 use Thelia\Core\Security\AccessManager;
 use Thelia\Core\Security\Resource\AdminResources;
 use Thelia\Form\CustomerUpdateForm;
+use Thelia\Model\AddressQuery;
 use Thelia\Model\Base\CustomerQuery;
 use Thelia\Model\Base\ProductSaleElementsQuery;
 use Thelia\Model\Customer;
@@ -26,6 +27,7 @@ use Thelia\Model\Map\ProductCategoryTableMap;
 use Thelia\Model\Map\ProductI18nTableMap;
 use Thelia\Model\Map\ProductSaleElementsTableMap;
 use Thelia\Model\Map\ProductTableMap;
+use Thelia\Model\Order;
 use Thelia\Tools\URL;
 
 class OrderCreationAdminController extends BaseAdminController
@@ -207,5 +209,21 @@ class OrderCreationAdminController extends BaseAdminController
         }
 
         return $this->jsonResponse(json_encode($result));
+    }
+
+    public function updateCountryInRequest()
+    {
+        if (null != $addressId = $this->getRequest()->request->get('address_id')) {
+
+            $order = new Order();
+            $order->setChoosenDeliveryAddress($addressId);
+
+            $this->getRequest()->getSession()->set(
+                "thelia.order",
+                $order
+            );
+        }
+
+        return null;
     }
 }

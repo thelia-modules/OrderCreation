@@ -14,9 +14,10 @@
                 <td>
                     {form_field form=$form field='delivery_address_id'}
                     <div class="form-group {if $error}has-error{/if}">
-                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
+                        <label for="{$label_attr.for}" class="control-label">{$label} * : </label>
 
-                        <select name="{$name}" id="{$label_attr.for}" class="form-control">
+                        <select name="{$name}" id="{$label_attr.for}" class="form-control" required="required">
+                            <option value="0">{intl l="Choose" d="ordercreation"}</option>
                             {loop type="address" name="address-delivery" customer=$ID}
                             <option value="{$ID}">{$LABEL}</option>
                             {/loop}
@@ -54,13 +55,21 @@
                 <td>
                     {form_field form=$form field='delivery_module_id'}
                     <div class="form-group {if $error}has-error{/if}">
-                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
-
-                        <select name="{$name}" id="{$label_attr.for}" class="form-control">
+                        <label for="{$label_attr.for}" class="control-label">{$label} * : </label><br />
+                        <input type="hidden" name="{$name}" id="delivery_module_id" value="" />
+                        <div id="list-delivery">
+                            <div class="alert alert-danger">
+                                {intl l="Choose a delivery address first" d="ordercreation"}
+                            </div>
+                        </div>
+                        <!--
+                        <select name="{$name}" id="{$label_attr.for}" class="form-control" required="required">
+                            <option>{intl l="Choose" d="ordercreation"}</option>
                             {loop type="module" name="module-delivery" module_type="2" active="1"}
                             <option value="{$ID}">{$TITLE}</option>
                             {/loop}
                         </select>
+                        -->
                     </div>
                     {/form_field}
                 </td>

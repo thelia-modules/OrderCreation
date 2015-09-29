@@ -18,4 +18,8 @@
         <requirement key="_format">xml|json</requirement>
     </route>
 
+    <route id="admin.order.creation.country.request" path="/admin/module/OrderCreation/update/country/request" methods="POST">
+        <default key="_controller">OrderCreation\Controller\Admin\OrderCreationAdminController::updateCountryInRequest</default>
+    </route>
+
 </routes>

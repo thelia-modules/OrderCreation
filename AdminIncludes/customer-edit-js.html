@@ -101,4 +101,63 @@
             $('#type_order_info').addClass('hide');
         }
     });
+
+    $('#delivery_address_id_form').on('change', function(){
+
+        if ($(this).val() > 0) {
+            $('#list-delivery').addClass('loading');
+
+            //update the country in the request
+            $.ajax({
+                type: "POST",
+                url: "/admin/module/OrderCreation/update/country/request",
+                data: {
+                    address_id: $(this).val()
+                }
+            })
+            .done(function(response){
+
+                $.ajax({
+                    type: "GET",
+                    url: "/order/deliveryModuleList"
+                })
+                .done(function(response){
+                    $('#list-delivery').removeClass('loading');
+                    $('#list-delivery').html(response);
+
+                    $('#list-delivery input.delivery-method').each(function(){
+                        if ($(this).is(':checked')) {
+                            $('#delivery_module_id').val($(this).val());
+                        }
+                    });
+                })
+                .error(function(error){
+                    $('#list-delivery').removeClass('loading');
+                    if (typeof(error.statusTexddt) != 'undefined') {
+                        $('#list-delivery').html('<div class="alert alert-danger">' + error.statusText + '</div>');
+                    }
+                });
+            })
+            .error(function(error){
+
+                $('#list-delivery').removeClass('loading');
+                if (typeof(error.statusTexddt) != 'undefined') {
+                    $('#list-delivery').html('<div class="alert alert-danger">' + error.statusText + '</div>');
+                }
+            });
+        } else {
+            $('#delivery_module_id').val(0);
+            $('#list-delivery').removeClass('loading');
+            $('#list-delivery').html(
+                '<div class="alert alert-danger">' +
+                    "{intl l='Choose a delivery address first' d='ordercreation'}" +
+                '</div>'
+            );
+        }
+
+    });
+
+    $('#list-delivery').on('change', '.delivery-method', function(){
+        $('#delivery_module_id').val($(this).val());
+    })
 </script>

@@ -8,6 +8,7 @@ return array(
 
     //C
     "Choose" => "Choisir",
+    "Choose a delivery address first" => "Veuillez choisir une adresse de livraison",
     "Create an order for this customer" => "Créer une commande pour ce client",
 
     //D
