@@ -108,9 +108,9 @@ class OrderCreationAdminController extends BaseAdminController
             }
 
             return $this->render('customer-edit', array(
-                    'customer_id' => $this->getRequest()->request->get('admin_order_create')['customer_id'],
-                    "order_creation_error" => $e->getMessage()
-                ));
+                'customer_id' => $this->getRequest()->request->get('admin_order_create')['customer_id'],
+                "order_creation_error" => $e->getMessage()
+            ));
         }
     }
 
@@ -215,13 +215,23 @@ class OrderCreationAdminController extends BaseAdminController
     {
         if (null != $addressId = $this->getRequest()->request->get('address_id')) {
 
-            $order = new Order();
-            $order->setChoosenDeliveryAddress($addressId);
-
-            $this->getRequest()->getSession()->set(
-                "thelia.order",
+            if (null != $address = AddressQuery::create()->findPk($addressId)) {
+                $order = new Order();
                 $order
-            );
+                    ->setCustomer()
+                    ->setChoosenDeliveryAddress($addressId);
+
+                $this->getRequest()->getSession()->set(
+                    "thelia.order",
+                    $order
+                );
+
+                $this->getRequest()->getSession()->set(
+                    "thelia.customer_user",
+                    $address->getCustomer()
+                );
+            }
+
         }
 
         return null;
