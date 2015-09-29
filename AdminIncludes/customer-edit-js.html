@@ -130,6 +130,11 @@
                             $('#delivery_module_id').val($(this).val());
                         }
                     });
+
+                    //clear both between all radio button
+                    $('#list-delivery .radio').each(function(){
+                        $(this).css('clear', 'both');
+                    });
                 })
                 .error(function(error){
                     $('#list-delivery').removeClass('loading');
