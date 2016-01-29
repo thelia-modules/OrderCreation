@@ -18,6 +18,14 @@ use Thelia\Form\BaseForm;
 class OrderCreationCreateForm extends BaseForm
 {
 
+    const FIELD_NAME_CUSTOMER_ID = 'customer_id';
+    const FIELD_NAME_DELIVERY_ADDRESS_ID = 'delivery_address_id';
+    const FIELD_NAME_INVOICE_ADDRESS_ID = 'invoice_address_id';
+    const FIELD_NAME_DELIVERY_MODULE_ID = 'delivery-module';
+    const FIELD_NAME_PAYMENT_MODULE_ID = 'payment_module_id';
+    const FIELD_NAME_PRODUCT_SALE_ELEMENT_ID = 'product_sale_element_id';
+    const FIELD_NAME_QUANTITY = 'quantity';
+
     /**
      *
      * in this function you add all the fields you need for your Form.
@@ -42,73 +50,105 @@ class OrderCreationCreateForm extends BaseForm
     {
         $this->formBuilder
 
-            ->add('customer_id', 'integer', array(
-                'constraints' => array(
-                    new NotBlank()
-                ),
-                'label' => 'customer_id',
-                'label_attr' => array(
-                    'for' => 'customer_id_form'
-                )
-            ))
-            ->add('delivery_address_id', 'integer', array(
-                'constraints' => array(
-                    new NotBlank()
-                ),
-                'label' => Translator::getInstance()->trans("Delivery address", array(), OrderCreation::MESSAGE_DOMAIN),
-                'label_attr' => array(
-                    'for' => 'delivery_address_id_form'
-                )
-            ))
-            ->add('invoice_address_id', 'integer', array(
-                'constraints' => array(
-                    new NotBlank()
-                ),
-                'label' => Translator::getInstance()->trans("Invoice address", array(), OrderCreation::MESSAGE_DOMAIN),
-                'label_attr' => array(
-                    'for' => 'invoice_address_id_form'
-                )
-            ))
-            ->add('delivery_module_id', 'integer', array(
-                'constraints' => array(
-                    new NotBlank()
-                ),
-                'label' => Translator::getInstance()->trans("Transport solution", array(), OrderCreation::MESSAGE_DOMAIN),
-                'label_attr' => array(
-                    'for' => 'delivery_module_id_form'
-                )
-            ))
-            ->add('payment_module_id', 'integer', array(
-                'constraints' => array(
-                    new NotBlank()
-                ),
-                'label' => Translator::getInstance()->trans("Payment solution", array(), OrderCreation::MESSAGE_DOMAIN),
-                'label_attr' => array(
-                    'for' => 'payment_module_id_form'
-                )
-            ))
-            ->add('product_sale_element_id', 'collection', array(
-                'type'         => 'number',
-                'label'        => Translator::getInstance()->trans('Product', array(), OrderCreation::MESSAGE_DOMAIN),
-                'label_attr'   => array('for' => 'product_sale_element_id_form'),
-                'allow_add'    => true,
-                'allow_delete' => true,
-            ))
-            ->add('quantity', 'collection', array(
-                'type'         => 'number',
-                'label'        => Translator::getInstance()->trans('Quantity', array(), OrderCreation::MESSAGE_DOMAIN),
-                'label_attr'   => array('for' => 'quantity_form'),
-                'allow_add'    => true,
-                'allow_delete' => true,
-                'options'      => array(
-                    'constraints' => array(
-                        new NotBlank(),
-                        new GreaterThan(
-                            array('value' => 0)
-                        )
-                    )
-                )
-            ))
+            ->add(
+                self::FIELD_NAME_CUSTOMER_ID,
+                'integer',
+                [
+                    'constraints' => [
+                        new NotBlank()
+                    ],
+                    'label' => Translator::getInstance()->trans("Customer", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr' => [
+                        'for' => self::FIELD_NAME_CUSTOMER_ID . '_form'
+                    ]
+                ]
+            )
+            ->add(
+                self::FIELD_NAME_DELIVERY_ADDRESS_ID,
+                'integer',
+                [
+                    'constraints' => [
+                        new NotBlank()
+                    ],
+                    'label' => Translator::getInstance()->trans("Delivery address", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr' => [
+                        'for' => self::FIELD_NAME_DELIVERY_ADDRESS_ID . '_form'
+                    ]
+                ]
+            )
+            ->add(
+                self::FIELD_NAME_INVOICE_ADDRESS_ID,
+                'integer',
+                [
+                    'constraints' => [
+                        new NotBlank()
+                    ],
+                    'label' => Translator::getInstance()->trans("Invoice address", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr' => [
+                        'for' => self::FIELD_NAME_INVOICE_ADDRESS_ID . '_form'
+                    ]
+                ]
+            )
+            ->add(
+                self::FIELD_NAME_DELIVERY_MODULE_ID,
+                'integer',
+                [
+                    'constraints' => [
+                        new NotBlank()
+                    ],
+                    'label' => Translator::getInstance()->trans("Transport solution", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr' => [
+                        'for' => self::FIELD_NAME_DELIVERY_MODULE_ID . '_form'
+                    ]
+                ]
+            )
+            ->add(
+                self::FIELD_NAME_PAYMENT_MODULE_ID,
+                'integer',
+                [
+                    'constraints' => [
+                        new NotBlank()
+                    ],
+                    'label' => Translator::getInstance()->trans("Payment solution", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr' => [
+                        'for' => self::FIELD_NAME_PAYMENT_MODULE_ID . '_form'
+                    ]
+                ]
+            )
+            ->add(
+                self::FIELD_NAME_PRODUCT_SALE_ELEMENT_ID,
+                'collection',
+                [
+                    'type'         => 'number',
+                    'label'        => Translator::getInstance()->trans('Product', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr'   => [
+                        'for' => self::FIELD_NAME_PRODUCT_SALE_ELEMENT_ID . '_form'
+                    ],
+                    'allow_add'    => true,
+                    'allow_delete' => true,
+                ]
+            )
+            ->add(
+                self::FIELD_NAME_QUANTITY,
+                'collection',
+                [
+                    'type'         => 'number',
+                    'label'        => Translator::getInstance()->trans('Quantity', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr'   => [
+                        'for' => self::FIELD_NAME_QUANTITY . '_form'
+                    ],
+                    'allow_add'    => true,
+                    'allow_delete' => true,
+                    'options'      => [
+                        'constraints' => [
+                            new NotBlank(),
+                            new GreaterThan(
+                                ['value' => 0]
+                            )
+                        ]
+                    ]
+                ]
+            )
         ;
     }
 
@@ -117,6 +157,7 @@ class OrderCreationCreateForm extends BaseForm
      */
     public function getName()
     {
-        return "admin_order_create";
+        //This name MUST be the same that the form OrderDelivery (because of ajax delivery module return)
+        return "thelia_order_delivery";
     }
 }

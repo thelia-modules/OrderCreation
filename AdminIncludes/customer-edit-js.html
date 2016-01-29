@@ -102,6 +102,8 @@
         }
     });
 
+    var prefixUrl = document.location.href.split('/admin');
+
     $('#delivery_address_id_form').on('change', function(){
 
         if ($(this).val() > 0) {
@@ -110,7 +112,7 @@
             //update the country in the request
             $.ajax({
                 type: "POST",
-                url: "/admin/module/OrderCreation/update/country/request",
+                url: prefixUrl[0] + "/admin/module/OrderCreation/update/country/request",
                 data: {
                     address_id: $(this).val()
                 }
@@ -119,7 +121,7 @@
 
                 $.ajax({
                     type: "GET",
-                    url: "/order/deliveryModuleList"
+                    url: prefixUrl[0] + "/order/deliveryModuleList"
                 })
                 .done(function(response){
                     $('#list-delivery').removeClass('loading');
@@ -127,7 +129,7 @@
 
                     $('#list-delivery input.delivery-method').each(function(){
                         if ($(this).is(':checked')) {
-                            $('#delivery_module_id').val($(this).val());
+                            $('#delivery-module').val($(this).val());
                         }
                     });
 
@@ -151,7 +153,7 @@
                 }
             });
         } else {
-            $('#delivery_module_id').val(0);
+            $('#delivery-module').val(0);
             $('#list-delivery').removeClass('loading');
             $('#list-delivery').html(
                 '<div class="alert alert-danger">' +
@@ -163,6 +165,6 @@
     });
 
     $('#list-delivery').on('change', '.delivery-method', function(){
-        $('#delivery_module_id').val($(this).val());
+        $('#delivery-module').val($(this).val());
     })
 </script>

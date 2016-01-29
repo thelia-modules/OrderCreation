@@ -60,13 +60,13 @@ class OrderCreationAdminController extends BaseAdminController
 
             $event
                 ->setContainer($this->getContainer())
-                ->setCustomerId($formValidate->get('customer_id')->getData())
-                ->setDeliveryAddressId($formValidate->get('delivery_address_id')->getData())
-                ->setDeliveryModuleId($formValidate->get('delivery_module_id')->getData())
-                ->setInvoiceAddressId($formValidate->get('invoice_address_id')->getData())
-                ->setPaymentModuleId($formValidate->get('payment_module_id')->getData())
-                ->setProductSaleElementIds($formValidate->get('product_sale_element_id')->getData())
-                ->setQuantities($formValidate->get('quantity')->getData())
+                ->setCustomerId($formValidate->get(OrderCreationCreateForm::FIELD_NAME_CUSTOMER_ID)->getData())
+                ->setDeliveryAddressId($formValidate->get(OrderCreationCreateForm::FIELD_NAME_DELIVERY_ADDRESS_ID)->getData())
+                ->setDeliveryModuleId($formValidate->get(OrderCreationCreateForm::FIELD_NAME_DELIVERY_MODULE_ID)->getData())
+                ->setInvoiceAddressId($formValidate->get(OrderCreationCreateForm::FIELD_NAME_INVOICE_ADDRESS_ID)->getData())
+                ->setPaymentModuleId($formValidate->get(OrderCreationCreateForm::FIELD_NAME_PAYMENT_MODULE_ID)->getData())
+                ->setProductSaleElementIds($formValidate->get(OrderCreationCreateForm::FIELD_NAME_PRODUCT_SALE_ELEMENT_ID)->getData())
+                ->setQuantities($formValidate->get(OrderCreationCreateForm::FIELD_NAME_QUANTITY)->getData())
             ;
 
             $this->dispatch(OrderCreationListener::ADMIN_ORDER_CREATE, $event);

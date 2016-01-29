@@ -53,10 +53,10 @@
             </tr>
             <tr>
                 <td>
-                    {form_field form=$form field='delivery_module_id'}
+                    {form_field form=$form field='delivery-module'}
                     <div class="form-group {if $error}has-error{/if}">
                         <label for="{$label_attr.for}" class="control-label">{$label} * : </label><br />
-                        <input type="hidden" name="{$name}" id="delivery_module_id" value="" />
+                        <input type="hidden" name="{$name}" id="delivery-module" value="" />
                         <div id="list-delivery">
                             <div class="alert alert-danger">
                                 {intl l="Choose a delivery address first" d="ordercreation"}
