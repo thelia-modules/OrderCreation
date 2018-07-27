@@ -5,7 +5,7 @@
         {form_hidden_fields form=$form}
 
         {form_field form=$form field='customer_id'}
-            <input type="hidden" name="{$name}" value="{$ID}">
+            <input type="hidden" name="{$name}" value="{$customer_id}">
         {/form_field}
 
         <table class="table">
@@ -18,7 +18,7 @@
 
                         <select name="{$name}" id="{$label_attr.for}" class="form-control" required="required">
                             <option value="0">{intl l="Choose" d="ordercreation"}</option>
-                            {loop type="address" name="address-delivery" customer=$ID}
+                            {loop type="address" name="address-delivery" customer=$customer_id}
                             <option value="{$ID}">{$LABEL}</option>
                             {/loop}
                         </select>
@@ -31,7 +31,7 @@
                         <label for="{$label_attr.for}" class="control-label">{$label} : </label>
 
                         <select name="{$name}" id="{$label_attr.for}" class="form-control">
-                            {loop type="address" name="address-invoice" customer=$ID}
+                            {loop type="address" name="address-invoice" customer=$customer_id}
                             <option value="{$ID}">{$LABEL}</option>
                             {/loop}
                         </select>
@@ -52,7 +52,7 @@
                 </td>
             </tr>
             <tr>
-                <td>
+                <td id="create-order-form-td-delivery-module">
                     {form_field form=$form field='delivery-module'}
                     <div class="form-group {if $error}has-error{/if}">
                         <label for="{$label_attr.for}" class="control-label">{$label} * : </label><br />
@@ -73,7 +73,7 @@
                     </div>
                     {/form_field}
                 </td>
-                <td>
+                <td id="create-order-form-td-payment_module_id">
                     {form_field form=$form field='payment_module_id'}
                     <div class="form-group {if $error}has-error{/if}">
                         <label for="{$label_attr.for}" class="control-label">{$label} : </label>
@@ -104,4 +104,5 @@
         form_enctype       = {form_enctype form=$form}
         form_error_message = $form_error_message
     }
+
 {/form}

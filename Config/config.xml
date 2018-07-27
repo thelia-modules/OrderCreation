@@ -11,6 +11,7 @@
     </loops>
 
     <forms>
+        <form name="admin.order.creation.form.configure" class="OrderCreation\Form\ConfigurationForm" />
         <form name="admin.order.creation.create.form" class="OrderCreation\Form\OrderCreationCreateForm" />
     </forms>
 
@@ -26,6 +27,15 @@
             <tag name="kernel.event_subscriber"/>
         </service>
     </services>
+
+    <hooks>
+        <hook id="order.creation.hook.back" >
+            <tag name="hook.event_listener" event="customer.edit-js" type="back" templates="render:customer-edit-js.html" />
+            <tag name="hook.event_listener" event="customer.edit" type="back" templates="render:customer-edit.html" />
+            <tag name="hook.event_listener" event="module.configuration" type="back" templates="render:module_configuration.html" />
+        </hook>
+    </hooks>
+
 
     <!--
     <exports>

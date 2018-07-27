@@ -1,4 +1,20 @@
 <script>
+    $(function() {
+        $.ajax({
+            url      : '{url path="/admin/module/OrderCreation/config/ajax"}',
+            type     : 'get',
+            dataType : 'json',
+            success  : function(json) {
+                console.log(json);
+                if (!json.moduleId) {
+                    return;
+                }
+                $('#create-order-form-td-delivery-module').hide();
+                $('#create-order-form-td-payment_module_id').colspan = 2;
+            }
+        });
+    });
+
     var nb_products = 0;
     //Automatic product add during order creation
     $('#add-cart-item').click(function(ev) {
@@ -118,7 +134,6 @@
                 }
             })
             .done(function(response){
-
                 $.ajax({
                     type: "GET",
                     url: prefixUrl[0] + "/order/deliveryModuleList"
@@ -146,7 +161,6 @@
                 });
             })
             .error(function(error){
-
                 $('#list-delivery').removeClass('loading');
                 if (typeof(error.statusTexddt) != 'undefined') {
                     $('#list-delivery').html('<div class="alert alert-danger">' + error.statusText + '</div>');
