@@ -24,6 +24,8 @@
     <services>
         <service id="order.creation.action" class="OrderCreation\EventListeners\OrderCreationListener" scope="request">
             <argument type="service" id="request"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="thelia.taxEngine"/>
             <tag name="kernel.event_subscriber"/>
         </service>
     </services>

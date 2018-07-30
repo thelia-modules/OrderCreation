@@ -10,13 +10,13 @@ namespace OrderCreation\EventListeners;
 
 
 use OrderCreation\Event\OrderCreationEvent;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Thelia\Core\Event\Order\OrderEvent;
 use Thelia\Core\Event\Order\OrderManualEvent;
 use Thelia\Core\Event\Order\OrderPaymentEvent;
 use Thelia\Core\Event\TheliaEvents;
 use Thelia\Core\HttpFoundation\Request;
-use Thelia\Core\HttpFoundation\Session\Session;
 use Thelia\Model\Base\AddressQuery;
 use Thelia\Model\Base\CustomerQuery;
 use Thelia\Model\Base\ProductSaleElementsQuery;
@@ -29,6 +29,9 @@ use Thelia\Model\Order;
 use Thelia\Model\OrderPostage;
 use Thelia\Model\OrderStatusQuery;
 use Thelia\Model\ProductPriceQuery;
+use Thelia\Model\Sale;
+use Thelia\Module\DeliveryModuleInterface;
+use Thelia\TaxEngine\TaxEngine;
 
 class OrderCreationListener implements EventSubscriberInterface
 {
@@ -38,10 +41,20 @@ class OrderCreationListener implements EventSubscriberInterface
     const ADMIN_ORDER_AFTER_CREATE_MANUAL = "action.admin.order.after.create.manual";
 
     protected $request;
+    private $eventDispatcher;
+    private $taxEngine;
 
-    public function __construct(Request $request)
+    /**
+     * OrderCreationListener constructor.
+     * @param Request $request
+     * @param EventDispatcherInterface $eventDispatcher
+     * @param TaxEngine $taxEngine
+     */
+    public function __construct(Request $request, EventDispatcherInterface $eventDispatcher, TaxEngine $taxEngine)
     {
         $this->request = $request;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->taxEngine = $taxEngine;
     }
 
     /**
@@ -71,6 +84,10 @@ class OrderCreationListener implements EventSubscriberInterface
         );
     }
 
+    /**
+     * @param OrderCreationEvent $event
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
     public function adminOrderCreate(OrderCreationEvent $event)
     {
         $pseIds = $event->getProductSaleElementIds();
@@ -93,6 +110,7 @@ class OrderCreationListener implements EventSubscriberInterface
         $customer = CustomerQuery::create()->findPk($event->getCustomerId());
 
         $order = new Order();
+        /** @noinspection PhpParamsInspection */
         $order
             ->setCustomerId($customer->getId())
             ->setCurrencyId($currency->getId())
@@ -103,8 +121,9 @@ class OrderCreationListener implements EventSubscriberInterface
             ->setChoosenInvoiceAddress($invoiceAddress)
         ;
 
+        $cartToken = uniqid("createorder", true);
         $cart = new Cart();
-        $cart->setToken(uniqid("createorder", true))
+        $cart->setToken($cartToken)
             ->setCustomer($customer)
             ->setCurrency($currency->getDefaultCurrency())
             ->save()
@@ -134,7 +153,7 @@ class OrderCreationListener implements EventSubscriberInterface
 
                     $event->setCartItem($cartItem);
 
-                    $event->getDispatcher()->dispatch(self::ADMIN_ORDER_BEFORE_ADD_CART, $event);
+                    $this->eventDispatcher->dispatch(self::ADMIN_ORDER_BEFORE_ADD_CART, $event);
 
                     $cartItem->save();
 
@@ -142,11 +161,30 @@ class OrderCreationListener implements EventSubscriberInterface
             }
         }
 
+        /** @noinspection CaseSensitivityServiceInspection */
+        $taxCountry = $this->taxEngine->getDeliveryCountry();
+        /** @noinspection MissingService */
+        $taxState = $this->taxEngine->getDeliveryState();
+        $cartAmountTTC = $cart->getTaxedAmount($taxCountry, false, $taxState);
+        $cartDiscount = $this->getDiscountPrice($cartAmountTTC, $event->getDiscountType(), $event->getDiscountPrice());
+
+        $this->request->getSession()->getSessionCart($this->eventDispatcher)
+            ->setDiscount($cartDiscount)
+            ->save();
+
+        $this->request->getSession()
+            ->getOrder()
+            ->setDiscount($cartDiscount);
+
+        $order->setDiscount($cartDiscount);
+        $cart->setDiscount($cartDiscount);
+        $cart->save();
+
         //If someone is connected in FRONT, stock it
         $oldCustomer = $this->request->getSession()->getCustomerUser();
 
         //Do the same for his cart
-        $oldCart = $this->request->getSession()->getSessionCart($event->getDispatcher());
+        $oldCart = $this->request->getSession()->getSessionCart($this->eventDispatcher);
 
         $this->request->getSession()->setCustomerUser($customer);
 
@@ -156,6 +194,7 @@ class OrderCreationListener implements EventSubscriberInterface
         $orderEvent->setDeliveryAddress($deliveryAddress->getId());
         $orderEvent->setInvoiceAddress($invoiceAddress->getId());
 
+        /** @var $moduleInstance DeliveryModuleInterface */
         $moduleInstance = $deliveryModule->getModuleInstance($event->getContainer());
         $postage = OrderPostage::loadFromPostage(
             $moduleInstance->getPostage($deliveryAddress->getCountry())
@@ -166,16 +205,16 @@ class OrderCreationListener implements EventSubscriberInterface
         $orderEvent->setDeliveryModule($deliveryModule->getId());
         $orderEvent->setPaymentModule($paymentModule->getId());
 
-        $event->getDispatcher()->dispatch(TheliaEvents::ORDER_SET_DELIVERY_ADDRESS, $orderEvent);
-        $event->getDispatcher()->dispatch(TheliaEvents::ORDER_SET_INVOICE_ADDRESS, $orderEvent);
-        $event->getDispatcher()->dispatch(TheliaEvents::ORDER_SET_POSTAGE, $orderEvent);
-        $event->getDispatcher()->dispatch(TheliaEvents::ORDER_SET_DELIVERY_MODULE, $orderEvent);
-        $event->getDispatcher()->dispatch(TheliaEvents::ORDER_SET_PAYMENT_MODULE, $orderEvent);
+        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_DELIVERY_ADDRESS, $orderEvent);
+        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_INVOICE_ADDRESS, $orderEvent);
+        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_POSTAGE, $orderEvent);
+        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_DELIVERY_MODULE, $orderEvent);
+        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_PAYMENT_MODULE, $orderEvent);
 
         //DO NOT FORGET THAT THE DISCOUNT ORDER HAS TO BE PLACED IN CART
-        if ($this->request->getSession()->getSessionCart($event->getDispatcher()) != null) {
-            $cart->setCartItems($this->request->getSession()->getSessionCart($event->getDispatcher())->getCartItems());
-            $cart->setDiscount($this->request->getSession()->getSessionCart($event->getDispatcher())->getDiscount());
+        if ($this->request->getSession()->getSessionCart($this->eventDispatcher) != null) {
+            $cart->setCartItems($this->request->getSession()->getSessionCart($this->eventDispatcher)->getCartItems());
+            $cart->setDiscount($this->request->getSession()->getSessionCart($this->eventDispatcher)->getDiscount());
         }
 
         $cart->save();
@@ -191,9 +230,9 @@ class OrderCreationListener implements EventSubscriberInterface
         $this->request->getSession()->set("thelia.cart_id", $cart->getId());
 
 
-        $event->getDispatcher()->dispatch(TheliaEvents::ORDER_CREATE_MANUAL, $orderManualEvent);
+        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_CREATE_MANUAL, $orderManualEvent);
 
-        $event->getDispatcher()->dispatch(
+        $this->eventDispatcher->dispatch(
             TheliaEvents::ORDER_BEFORE_PAYMENT,
             new OrderEvent($orderManualEvent->getPlacedOrder())
         );
@@ -205,14 +244,14 @@ class OrderCreationListener implements EventSubscriberInterface
         /* call pay method */
         $payEvent = new OrderPaymentEvent($orderManualEvent->getPlacedOrder());
 
-        $event->getDispatcher()->dispatch(TheliaEvents::MODULE_PAY, $payEvent);
+        $this->eventDispatcher->dispatch(TheliaEvents::MODULE_PAY, $payEvent);
 
         if ($payEvent->hasResponse()) {
             $event->setResponse($payEvent->getResponse());
         }
 
         $event->setPlacedOrder($orderManualEvent->getPlacedOrder());
-        $event->getDispatcher()->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
+        $this->eventDispatcher->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
 
         //Reconnect the front user
         if ($oldCustomer != null) {
@@ -225,5 +264,25 @@ class OrderCreationListener implements EventSubscriberInterface
         } else {
             $this->request->getSession()->clearCustomerUser();
         }
+    }
+
+
+    protected function getDiscountPrice($orderPriceWithTax, $discountType, $discountValue)
+    {
+        // Remove the price offset to get the taxed promo price
+        switch ($discountType) {
+            case Sale::OFFSET_TYPE_AMOUNT:
+                if ($discountValue > $orderPriceWithTax) {
+                    $discountValue = $orderPriceWithTax;
+                }
+                break;
+
+            case Sale::OFFSET_TYPE_PERCENTAGE:
+                $discountValue = $orderPriceWithTax - $orderPriceWithTax * (1 - $discountValue / 100);
+                break;
+            default:
+                $discountValue = 0;
+        }
+        return $discountValue;
     }
 }

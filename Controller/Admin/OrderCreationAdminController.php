@@ -102,8 +102,6 @@ class OrderCreationAdminController extends BaseAdminController
         if (null !== $response) {
             return $response;
         }
-        $customerId = $this->getRequest()->get('thelia_order_delivery')['customer_id'];
-
         $con = Propel::getConnection(OrderTableMap::DATABASE_NAME);
         $con->beginTransaction();
 
@@ -131,6 +129,8 @@ class OrderCreationAdminController extends BaseAdminController
                 ->setPaymentModuleId($formValidate->get(OrderCreationCreateForm::FIELD_NAME_PAYMENT_MODULE_ID)->getData())
                 ->setProductSaleElementIds($formValidate->get(OrderCreationCreateForm::FIELD_NAME_PRODUCT_SALE_ELEMENT_ID)->getData())
                 ->setQuantities($formValidate->get(OrderCreationCreateForm::FIELD_NAME_QUANTITY)->getData())
+                ->setDiscountPrice($formValidate->get(OrderCreationCreateForm::FIELD_DISCOUNT_PRICE)->getData())
+                ->setDiscountType($formValidate->get(OrderCreationCreateForm::FIELD_DISCOUNT_TYPE)->getData())
             ;
 
             $this->dispatch(OrderCreationListener::ADMIN_ORDER_CREATE, $event);
