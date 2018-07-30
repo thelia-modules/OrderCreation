@@ -155,8 +155,9 @@ class OrderCreationAdminController extends BaseAdminController
             $this->getParserContext()
                 ->addForm($form)
                 ->setGeneralError($error_message);
+            return $this->generateErrorRedirect($form);
         }
-        return $this->generateRedirect('/admin/customer/update?customer_id='.$customerId);
+        return $this->generateSuccessRedirect($form);
     }
 
     protected function hydrateCustomerForm(Customer $customer)

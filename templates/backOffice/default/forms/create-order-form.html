@@ -8,6 +8,14 @@
             <input type="hidden" name="{$name}" value="{$customer_id}">
         {/form_field}
 
+        {form_field form=$form field='error_url'}
+            <input type="hidden" name="{$name}" value="{url path={navigate to="current"}}"/>
+        {/form_field}
+
+        {form_field form=$form field='success_url'}
+            <input type="hidden" name="{$name}" value="{url path={navigate to="current"}}"/>
+        {/form_field}
+
         <table class="table">
             <thead>
             <tr>
