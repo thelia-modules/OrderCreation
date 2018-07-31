@@ -131,6 +131,7 @@ class OrderCreationAdminController extends BaseAdminController
                 ->setQuantities($formValidate->get(OrderCreationCreateForm::FIELD_NAME_QUANTITY)->getData())
                 ->setDiscountPrice($formValidate->get(OrderCreationCreateForm::FIELD_DISCOUNT_PRICE)->getData())
                 ->setDiscountType($formValidate->get(OrderCreationCreateForm::FIELD_DISCOUNT_TYPE)->getData())
+                ->setLang($this->getCurrentEditionLang())
             ;
 
             $this->dispatch(OrderCreationListener::ADMIN_ORDER_CREATE, $event);

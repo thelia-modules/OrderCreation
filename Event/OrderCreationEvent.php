@@ -52,6 +52,8 @@ class OrderCreationEvent extends ActionEvent
     /** @var int */
     protected $discountType;
 
+    protected $lang;
+
     public function __construct()
     {
         //
@@ -311,6 +313,22 @@ class OrderCreationEvent extends ActionEvent
     public function getDiscountType()
     {
         return $this->discountType;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLang()
+    {
+        return $this->lang;
+    }
+
+    /**
+     * @param mixed $lang
+     */
+    public function setLang($lang)
+    {
+        $this->lang = $lang;
     }
 
 

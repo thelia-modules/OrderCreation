@@ -10,8 +10,11 @@ namespace OrderCreation\EventListeners;
 
 
 use OrderCreation\Event\OrderCreationEvent;
+use Propel\Runtime\Propel;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Thelia\Core\Event\Coupon\CouponConsumeEvent;
+use Thelia\Core\Event\Coupon\CouponCreateOrUpdateEvent;
 use Thelia\Core\Event\Order\OrderEvent;
 use Thelia\Core\Event\Order\OrderManualEvent;
 use Thelia\Core\Event\Order\OrderPaymentEvent;
@@ -22,8 +25,9 @@ use Thelia\Model\Base\CustomerQuery;
 use Thelia\Model\Base\ProductSaleElementsQuery;
 use Thelia\Model\Cart;
 use Thelia\Model\CartItem;
+use Thelia\Model\Coupon;
 use Thelia\Model\Currency;
-use Thelia\Model\Lang;
+use Thelia\Model\Map\CartTableMap;
 use Thelia\Model\ModuleQuery;
 use Thelia\Model\Order;
 use Thelia\Model\OrderPostage;
@@ -50,7 +54,11 @@ class OrderCreationListener implements EventSubscriberInterface
      * @param EventDispatcherInterface $eventDispatcher
      * @param TaxEngine $taxEngine
      */
-    public function __construct(Request $request, EventDispatcherInterface $eventDispatcher, TaxEngine $taxEngine)
+    public function __construct(
+        Request $request,
+        EventDispatcherInterface $eventDispatcher,
+        TaxEngine $taxEngine
+    )
     {
         $this->request = $request;
         $this->eventDispatcher = $eventDispatcher;
@@ -87,6 +95,7 @@ class OrderCreationListener implements EventSubscriberInterface
     /**
      * @param OrderCreationEvent $event
      * @throws \Propel\Runtime\Exception\PropelException
+     * @throws \Exception
      */
     public function adminOrderCreate(OrderCreationEvent $event)
     {
@@ -104,7 +113,6 @@ class OrderCreationListener implements EventSubscriberInterface
 
         /** @var \Thelia\Model\Currency $currency */
         $currency = Currency::getDefaultCurrency();
-        $lang = new Lang();
 
         /** @var \Thelia\Model\Customer $customer */
         $customer = CustomerQuery::create()->findPk($event->getCustomerId());
@@ -116,173 +124,213 @@ class OrderCreationListener implements EventSubscriberInterface
             ->setCurrencyId($currency->getId())
             ->setCurrencyRate($currency->getRate())
             ->setStatusId(OrderStatusQuery::getNotPaidStatus()->getId())
-            ->setLangId($lang->getDefaultLanguage()->getId())
+            ->setLangId($event->getLang()->getDefaultLanguage()->getId())
             ->setChoosenDeliveryAddress($deliveryAddress)
             ->setChoosenInvoiceAddress($invoiceAddress)
         ;
 
-        $cartToken = uniqid("createorder", true);
-        $cart = new Cart();
-        $cart->setToken($cartToken)
-            ->setCustomer($customer)
-            ->setCurrency($currency->getDefaultCurrency())
-            ->save()
-        ;
+        $con = Propel::getWriteConnection(CartTableMap::DATABASE_NAME);
 
-        foreach ($pseIds as $key => $pseId) {
+        //If someone is connected in FRONT, stock it
+        $oldCustomer = $this->request->getSession()->getCustomerUser();
+        //Do the same for his cart
+        $oldCart = $this->request->getSession()->getSessionCart($this->eventDispatcher);
 
-            /** @var \Thelia\Model\ProductSaleElements $productSaleElements */
-            if (null != $productSaleElements = ProductSaleElementsQuery::create()->findOneById($pseId)) {
+        try {
+            $cartToken = uniqid("createorder", true);
+            $cart = new Cart();
+            $cart->setToken($cartToken)
+                ->setCustomer($customer)
+                ->setCurrency($currency->getDefaultCurrency())
+                ->save();
 
-                /** @var \Thelia\Model\ProductPrice $productPrice */
-                if (null != $productPrice = ProductPriceQuery::create()
-                        ->filterByProductSaleElementsId($productSaleElements->getId())
-                        ->filterByCurrencyId($currency->getDefaultCurrency()->getId())
-                        ->findOne()) {
+            foreach ($pseIds as $key => $pseId) {
 
-                    $cartItem = new CartItem();
-                    $cartItem
-                        ->setCart($cart)
-                        ->setProduct($productSaleElements->getProduct())
-                        ->setProductSaleElements($productSaleElements)
-                        ->setQuantity($quantities[$key])
-                        ->setPrice($productPrice->getPrice())
-                        ->setPromoPrice($productPrice->getPromoPrice())
-                        ->setPromo($productSaleElements->getPromo())
-                        ->setPriceEndOfLife(time() + 60*60*24*30);
+                /** @var \Thelia\Model\ProductSaleElements $productSaleElements */
+                if (null != $productSaleElements = ProductSaleElementsQuery::create()->findOneById($pseId)) {
 
-                    $event->setCartItem($cartItem);
+                    /** @var \Thelia\Model\ProductPrice $productPrice */
+                    if (null != $productPrice = ProductPriceQuery::create()
+                            ->filterByProductSaleElementsId($productSaleElements->getId())
+                            ->filterByCurrencyId($currency->getDefaultCurrency()->getId())
+                            ->findOne()) {
 
-                    $this->eventDispatcher->dispatch(self::ADMIN_ORDER_BEFORE_ADD_CART, $event);
+                        $cartItem = new CartItem();
+                        $cartItem
+                            ->setCart($cart)
+                            ->setProduct($productSaleElements->getProduct())
+                            ->setProductSaleElements($productSaleElements)
+                            ->setQuantity($quantities[$key])
+                            ->setPrice($productPrice->getPrice())
+                            ->setPromoPrice($productPrice->getPromoPrice())
+                            ->setPromo($productSaleElements->getPromo())
+                            ->setPriceEndOfLife(time() + 60 * 60 * 24 * 30);
 
-                    $cartItem->save();
+                        $event->setCartItem($cartItem);
 
+                        $this->eventDispatcher->dispatch(self::ADMIN_ORDER_BEFORE_ADD_CART, $event);
+
+                        $cartItem->save();
+
+                    }
                 }
             }
-        }
 
+            $this->request->getSession()->setCustomerUser($customer);
+
+            $this->request->getSession()->set("thelia.cart_id", $cart->getId());
+
+            $orderEvent = new OrderEvent($order);
+            $orderEvent->setDeliveryAddress($deliveryAddress->getId());
+            $orderEvent->setInvoiceAddress($invoiceAddress->getId());
+
+            /** @var $moduleInstance DeliveryModuleInterface */
+            $moduleInstance = $deliveryModule->getModuleInstance($event->getContainer());
+            $postage = OrderPostage::loadFromPostage(
+                $moduleInstance->getPostage($deliveryAddress->getCountry())
+            );
+            $orderEvent->setPostage($postage->getAmount());
+            $orderEvent->setPostageTax($postage->getAmountTax());
+            $orderEvent->setPostageTaxRuleTitle($postage->getTaxRuleTitle());
+            $orderEvent->setDeliveryModule($deliveryModule->getId());
+            $orderEvent->setPaymentModule($paymentModule->getId());
+
+            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_DELIVERY_ADDRESS, $orderEvent);
+            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_INVOICE_ADDRESS, $orderEvent);
+            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_POSTAGE, $orderEvent);
+            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_DELIVERY_MODULE, $orderEvent);
+            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_PAYMENT_MODULE, $orderEvent);
+
+            //DO NOT FORGET THAT THE DISCOUNT ORDER HAS TO BE PLACED IN CART
+            if ($this->request->getSession()->getSessionCart($this->eventDispatcher) != null) {
+                $cart->setCartItems($this->request->getSession()->getSessionCart($this->eventDispatcher)->getCartItems());
+                $cart->setDiscount($this->request->getSession()->getSessionCart($this->eventDispatcher)->getDiscount());
+            }
+
+            $cart->save();
+
+            $coupon = $this->createCoupon($event, $cart);
+            if (!empty($coupon)) {
+                /** @noinspection PhpParamsInspection */
+                $couponConsumeEvent = new CouponConsumeEvent($coupon->getCode());
+                // Dispatch Event to the Action
+                $this->eventDispatcher->dispatch(TheliaEvents::COUPON_CONSUME, $couponConsumeEvent);
+            }
+
+            $orderManualEvent = new OrderManualEvent(
+                $orderEvent->getOrder(),
+                $orderEvent->getOrder()->getCurrency(),
+                $orderEvent->getOrder()->getLang(),
+                $cart,
+                $customer
+            );
+
+            $this->request->getSession()->set("thelia.cart_id", $cart->getId());
+
+            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_CREATE_MANUAL, $orderManualEvent);
+
+            $this->eventDispatcher->dispatch(
+                TheliaEvents::ORDER_BEFORE_PAYMENT,
+                new OrderEvent($orderManualEvent->getPlacedOrder())
+            );
+
+            /* but memorize placed order */
+            $orderEvent->setOrder(new Order());
+            $orderEvent->setPlacedOrder($orderManualEvent->getPlacedOrder());
+
+            /* call pay method */
+            $payEvent = new OrderPaymentEvent($orderManualEvent->getPlacedOrder());
+
+            $this->eventDispatcher->dispatch(TheliaEvents::MODULE_PAY, $payEvent);
+
+            if ($payEvent->hasResponse()) {
+                $event->setResponse($payEvent->getResponse());
+            }
+
+            $event->setPlacedOrder($orderManualEvent->getPlacedOrder());
+            $this->eventDispatcher->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
+
+            $con->commit();
+        } catch (\Exception $e) {
+            if ($con !== null) {
+                $con->rollback();
+            }
+            throw $e;
+        } finally {
+
+            //Reconnect the front user
+            if ($oldCustomer != null) {
+                $this->request->getSession()->setCustomerUser($oldCustomer);
+
+                //And fill his cart
+                if ($oldCart != null) {
+                    $this->request->getSession()->set("thelia.cart_id", $oldCart->getId());
+                }
+            } else {
+                $this->request->getSession()->clearCustomerUser();
+            }
+        }
+    }
+
+
+    /**
+     * @param $event OrderCreationEvent
+     * @param $cart Cart
+     * @return null|Coupon
+     * @throws \Exception
+     */
+    protected function createCoupon($event, $cart)
+    {
+        if (empty($event->getDiscountPrice())) {
+            return null;
+        }
         /** @noinspection CaseSensitivityServiceInspection */
         $taxCountry = $this->taxEngine->getDeliveryCountry();
         /** @noinspection MissingService */
         $taxState = $this->taxEngine->getDeliveryState();
         $cartAmountTTC = $cart->getTaxedAmount($taxCountry, false, $taxState);
-        $cartDiscount = $this->getDiscountPrice($cartAmountTTC, $event->getDiscountType(), $event->getDiscountPrice());
+        $code = uniqid("bo-order-", true);
+        $title = sprintf('Order %d %s', $event->getCustomerId(), (new \DateTime())->format("Y-m-d H:i:s"));
 
-        $this->request->getSession()->getSessionCart($this->eventDispatcher)
-            ->setDiscount($cartDiscount)
-            ->save();
-
-        $this->request->getSession()
-            ->getOrder()
-            ->setDiscount($cartDiscount);
-
-        $order->setDiscount($cartDiscount);
-        $cart->setDiscount($cartDiscount);
-        $cart->save();
-
-        //If someone is connected in FRONT, stock it
-        $oldCustomer = $this->request->getSession()->getCustomerUser();
-
-        //Do the same for his cart
-        $oldCart = $this->request->getSession()->getSessionCart($this->eventDispatcher);
-
-        $this->request->getSession()->setCustomerUser($customer);
-
-        $this->request->getSession()->set("thelia.cart_id", $cart->getId());
-
-        $orderEvent = new OrderEvent($order);
-        $orderEvent->setDeliveryAddress($deliveryAddress->getId());
-        $orderEvent->setInvoiceAddress($invoiceAddress->getId());
-
-        /** @var $moduleInstance DeliveryModuleInterface */
-        $moduleInstance = $deliveryModule->getModuleInstance($event->getContainer());
-        $postage = OrderPostage::loadFromPostage(
-            $moduleInstance->getPostage($deliveryAddress->getCountry())
-        );
-        $orderEvent->setPostage($postage->getAmount());
-        $orderEvent->setPostageTax($postage->getAmountTax());
-        $orderEvent->setPostageTaxRuleTitle($postage->getTaxRuleTitle());
-        $orderEvent->setDeliveryModule($deliveryModule->getId());
-        $orderEvent->setPaymentModule($paymentModule->getId());
-
-        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_DELIVERY_ADDRESS, $orderEvent);
-        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_INVOICE_ADDRESS, $orderEvent);
-        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_POSTAGE, $orderEvent);
-        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_DELIVERY_MODULE, $orderEvent);
-        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_PAYMENT_MODULE, $orderEvent);
-
-        //DO NOT FORGET THAT THE DISCOUNT ORDER HAS TO BE PLACED IN CART
-        if ($this->request->getSession()->getSessionCart($this->eventDispatcher) != null) {
-            $cart->setCartItems($this->request->getSession()->getSessionCart($this->eventDispatcher)->getCartItems());
-            $cart->setDiscount($this->request->getSession()->getSessionCart($this->eventDispatcher)->getDiscount());
-        }
-
-        $cart->save();
-
-        $orderManualEvent = new OrderManualEvent(
-            $orderEvent->getOrder(),
-            $orderEvent->getOrder()->getCurrency(),
-            $orderEvent->getOrder()->getLang(),
-            $cart,
-            $customer
-        );
-
-        $this->request->getSession()->set("thelia.cart_id", $cart->getId());
-
-
-        $this->eventDispatcher->dispatch(TheliaEvents::ORDER_CREATE_MANUAL, $orderManualEvent);
-
-        $this->eventDispatcher->dispatch(
-            TheliaEvents::ORDER_BEFORE_PAYMENT,
-            new OrderEvent($orderManualEvent->getPlacedOrder())
-        );
-
-        /* but memorize placed order */
-        $orderEvent->setOrder(new Order());
-        $orderEvent->setPlacedOrder($orderManualEvent->getPlacedOrder());
-
-        /* call pay method */
-        $payEvent = new OrderPaymentEvent($orderManualEvent->getPlacedOrder());
-
-        $this->eventDispatcher->dispatch(TheliaEvents::MODULE_PAY, $payEvent);
-
-        if ($payEvent->hasResponse()) {
-            $event->setResponse($payEvent->getResponse());
-        }
-
-        $event->setPlacedOrder($orderManualEvent->getPlacedOrder());
-        $this->eventDispatcher->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
-
-        //Reconnect the front user
-        if ($oldCustomer != null) {
-            $this->request->getSession()->setCustomerUser($oldCustomer);
-
-            //And fill his cart
-            if ($oldCart != null) {
-                $this->request->getSession()->set("thelia.cart_id", $oldCart->getId());
-            }
-        } else {
-            $this->request->getSession()->clearCustomerUser();
-        }
-    }
-
-
-    protected function getDiscountPrice($orderPriceWithTax, $discountType, $discountValue)
-    {
-        // Remove the price offset to get the taxed promo price
-        switch ($discountType) {
+        switch ($event->getDiscountType()) {
             case Sale::OFFSET_TYPE_AMOUNT:
-                if ($discountValue > $orderPriceWithTax) {
-                    $discountValue = $orderPriceWithTax;
-                }
+                $discountValue = min($event->getDiscountPrice(), $cartAmountTTC);
+                $effects = ['amount' => $discountValue];
+                $couponServiceId = 'thelia.coupon.type.remove_x_amount';
                 break;
-
             case Sale::OFFSET_TYPE_PERCENTAGE:
-                $discountValue = $orderPriceWithTax - $orderPriceWithTax * (1 - $discountValue / 100);
+                $discountValue = max(0.00, min(100.00,  $event->getDiscountPrice()));
+                $effects = ['percentage' => $discountValue];
+                $couponServiceId = 'thelia.coupon.type.remove_x_percent';
                 break;
             default:
-                $discountValue = 0;
+                return null;
         }
-        return $discountValue;
+
+        // Expiration dans 1 an
+        $dateExpiration = (new \DateTime())->add(new \DateInterval('P1Y'));
+
+        $couponEvent = new CouponCreateOrUpdateEvent(
+            $code,
+            $couponServiceId,
+            $title,
+            $effects,
+            '',
+            '',
+            true,
+            $dateExpiration,
+            false,
+            true,
+            false,
+            1,
+            $event->getLang()->getLocale(),
+            [],
+            [],
+            1
+        );
+
+        $this->eventDispatcher->dispatch(TheliaEvents::COUPON_CREATE, $couponEvent);
+
+        return $couponEvent->getCouponModel();
     }
 }
