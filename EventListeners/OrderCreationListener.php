@@ -10,7 +10,6 @@ namespace OrderCreation\EventListeners;
 
 
 use OrderCreation\Event\OrderCreationEvent;
-use Propel\Runtime\Propel;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Thelia\Core\Event\Coupon\CouponConsumeEvent;
@@ -27,7 +26,6 @@ use Thelia\Model\Cart;
 use Thelia\Model\CartItem;
 use Thelia\Model\Coupon;
 use Thelia\Model\Currency;
-use Thelia\Model\Map\CartTableMap;
 use Thelia\Model\ModuleQuery;
 use Thelia\Model\Order;
 use Thelia\Model\OrderPostage;
@@ -99,6 +97,7 @@ class OrderCreationListener implements EventSubscriberInterface
      */
     public function adminOrderCreate(OrderCreationEvent $event)
     {
+
         $pseIds = $event->getProductSaleElementIds();
         $quantities = $event->getQuantities();
 
@@ -128,8 +127,6 @@ class OrderCreationListener implements EventSubscriberInterface
             ->setChoosenDeliveryAddress($deliveryAddress)
             ->setChoosenInvoiceAddress($invoiceAddress)
         ;
-
-        $con = Propel::getWriteConnection(CartTableMap::DATABASE_NAME);
 
         //If someone is connected in FRONT, stock it
         $oldCustomer = $this->request->getSession()->getCustomerUser();
@@ -250,11 +247,7 @@ class OrderCreationListener implements EventSubscriberInterface
             $event->setPlacedOrder($orderManualEvent->getPlacedOrder());
             $this->eventDispatcher->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
 
-            $con->commit();
         } catch (\Exception $e) {
-            if ($con !== null) {
-                $con->rollback();
-            }
             throw $e;
         } finally {
 
