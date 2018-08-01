@@ -1,4 +1,13 @@
 {form name="admin.order.creation.create.form"}
+{if !isset($productId)}
+    {assign var="productId" value="0"}
+    {assign var="categoryId" value="0"}
+    {assign var="quantity" value="1"}
+{else}
+    {loop name="cat-product" type="category" product="$productId" limit=1}
+        {assign var="categoryId" value="$ID"}
+    {/loop}
+{/if}
 <tr id="tr-{$position}" class="title-without-tabs">
     <td colspan="2">
         <table class="table table-striped table-condensed">
@@ -14,10 +23,15 @@
             <tr>
                 <td>
                     <label for="category{$position}" class="control-label">{intl l="Category" d="ordercreation"}</label>
-                    <select id="category{$position}" required="required" class="form-control category-list" data-target="item{$position}" data-destination="tr-item{$position}">
+                    <select id="category{$position}"
+                            required="required"
+                            class="form-control category-list"
+                            data-product="{$productId}"
+                            data-target="item{$position}"
+                            data-destination="tr-item{$position}">
                         <option>{intl l="Choose"}</option>
-                        {loop name="cat-parent" type="category-tree" category="0" visible="*" product="0"}
-                        <option value="{$ID}" style="padding-left: {3 + $LEVEL * 20}px">{$TITLE}</option>
+                        {loop name="cat-parent" type="category-tree" category="0" visible="*" product="$productId"}
+                        <option  value="{$ID}" {if $categoryId == $ID}selected="selected"{/if} style="padding-left: {3 + $LEVEL * 20}px">{$TITLE}</option>
                         {/loop}
                     </select>
                 </td>
@@ -33,7 +47,7 @@
                 <td>
                     {form_field form=$form field='quantity' value_key=$position}
                         <label for="quantity{$position}" class="control-label">{$label}</label>
-                        <input type="text" class="form-control" name="{$name}" value="1">
+                        <input type="text" class="form-control" name="{$name}" value="{$quantity}">
                     {/form_field}
                 </td>
             </tr>

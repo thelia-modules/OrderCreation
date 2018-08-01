@@ -1,17 +1,37 @@
 <script>
-    var nb_products = 0;
+    $(function() {
+        $.ajax({
+            url      : '{url path="/admin/module/OrderCreation/config/ajax"}',
+            type     : 'get',
+            dataType : 'json',
+            success  : function(json) {
+                if (!json.moduleId) {
+                    return;
+                }
+                $('#create-order-form-td-delivery-module').hide();
+                $('#create-order-form-td-payment_module_id').colspan = 2;
+            }
+        });
+
+        window.onload = function () {
+            $("#body-order-cart .category-list").trigger("change");
+        }
+    });
+
+
     //Automatic product add during order creation
     $('#add-cart-item').click(function(ev) {
+        var nb_products = $(".category-list").length;
         $.get("{url path='/admin/module/OrderCreation/add-item'}/"+nb_products, function(data){
-            nb_products += 1;
             $('#body-order-cart').append(data);
         },'html');
     });
 
+
     $('#body-order-cart').on('change', '.category-list', function(clickEvent){
         var target_id = $(this).data('target');
         var target_destination_id = $(this).data('destination');
-
+        var target_product_id = $(this).data('product');
         $.ajax({
             url      : '{url path="/admin/module/OrderCreation/0/list-products/"}' + $(this).val() + '.xml',
             type     : 'get',
@@ -23,29 +43,30 @@
                 var oldValue = null;
                 var isOptGroupOpen = false;
                 var listOfOptions = "";
-
+                var selectedAttr = "";
                 $.each(json, function(idx, value) {
 
                     if (oldValue == null) {
                         oldValue = value;
                     } else {
 
+                        selectedAttr = target_product_id == oldValue.id ? "selected " : "";
+
                         if (oldValue.product_id == value.product_id) {
 
                             if (isOptGroupOpen == false) {
                                 listOfOptions +=
                                     '<optgroup label="' + oldValue.title + '">' +
-                                        '<option value="' + oldValue.id + '">' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>'
+                                        '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>'
                                 ;
 
                                 isOptGroupOpen = true;
                             } else {
                                 listOfOptions +=
-                                    '<option value="' + oldValue.id + '">' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>'
+                                    '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>'
                                 ;
                             }
                         } else {
-
                             if (isOptGroupOpen == true) {
                                 listOfOptions +=
                                     '</optgroup>'
@@ -53,7 +74,7 @@
                             }
 
                             listOfOptions +=
-                                '<option value="' + oldValue.id + '">' + oldValue.title + '(' + oldValue.quantity + ')' + '</option>'
+                                '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.title + '(' + oldValue.quantity + ')' + '</option>'
                             ;
                         }
 
@@ -68,15 +89,16 @@
                 });
 
 
+                selectedAttr = target_product_id == oldValue.id ? "selected " : "";
 
                 if (isOptGroupOpen == true) {
                     listOfOptions +=
-                            '<option value="' + oldValue.id + '">' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>' +
+                            '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>' +
                         '</optgroup>'
                     ;
                 } else {
                     listOfOptions +=
-                        '<option value="' + oldValue.id + '">' + oldValue.title + '(' + oldValue.quantity + ')' + '</option>'
+                        '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.title + '(' + oldValue.quantity + ')' + '</option>'
                     ;
                 }
                 $('#'+target_id).append(listOfOptions);
@@ -118,7 +140,6 @@
                 }
             })
             .done(function(response){
-
                 $.ajax({
                     type: "GET",
                     url: prefixUrl[0] + "/order/deliveryModuleList"
@@ -146,7 +167,6 @@
                 });
             })
             .error(function(error){
-
                 $('#list-delivery').removeClass('loading');
                 if (typeof(error.statusTexddt) != 'undefined') {
                     $('#list-delivery').html('<div class="alert alert-danger">' + error.statusText + '</div>');

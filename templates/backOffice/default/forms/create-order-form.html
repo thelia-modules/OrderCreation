@@ -5,7 +5,15 @@
         {form_hidden_fields form=$form}
 
         {form_field form=$form field='customer_id'}
-            <input type="hidden" name="{$name}" value="{$ID}">
+            <input type="hidden" name="{$name}" value="{$customer_id}">
+        {/form_field}
+
+        {form_field form=$form field='error_url'}
+            <input type="hidden" name="{$name}" value="{url path={navigate to="current"}}"/>
+        {/form_field}
+
+        {form_field form=$form field='success_url'}
+            <input type="hidden" name="{$name}" value="{url path={navigate to="current"}}"/>
         {/form_field}
 
         <table class="table">
@@ -17,9 +25,9 @@
                         <label for="{$label_attr.for}" class="control-label">{$label} * : </label>
 
                         <select name="{$name}" id="{$label_attr.for}" class="form-control" required="required">
-                            <option value="0">{intl l="Choose" d="ordercreation"}</option>
-                            {loop type="address" name="address-delivery" customer=$ID}
-                            <option value="{$ID}">{$LABEL}</option>
+                            <option value="0" {if $value == $ID}selected="selected"{/if} >{intl l="Choose" d="ordercreation"}</option>
+                            {loop type="address" name="address-delivery" customer=$customer_id}
+                            <option value="{$ID}" {if $value == $ID}selected="selected"{/if}>{$LABEL}</option>
                             {/loop}
                         </select>
                     </div>
@@ -31,8 +39,8 @@
                         <label for="{$label_attr.for}" class="control-label">{$label} : </label>
 
                         <select name="{$name}" id="{$label_attr.for}" class="form-control">
-                            {loop type="address" name="address-invoice" customer=$ID}
-                            <option value="{$ID}">{$LABEL}</option>
+                            {loop type="address" name="address-invoice" customer=$customer_id}
+                            <option value="{$ID}" {if $value == $ID}selected="selected"{/if}>{$LABEL}</option>
                             {/loop}
                         </select>
                     </div>
@@ -41,7 +49,17 @@
             </tr>
             </thead>
             <tbody id="body-order-cart">
-
+            {$productQuantities = []}
+            {form_field form=$form field='quantity'}
+                {$productQuantities = $value}
+            {/form_field}
+            {form_field form=$form field='product_sale_element_id'}
+                {assign var='indexProduct' value=0}
+                {foreach $value as $productId}
+                    {include file="../ajax/add-cart-item.html" productId=$productId position=$indexProduct quantity=$productQuantities[$indexProduct]}
+                    {assign var='indexProduct' value=$indexProduct+1}
+                {/foreach}
+            {/form_field}
             </tbody>
             <tfoot>
             <tr>
@@ -52,7 +70,30 @@
                 </td>
             </tr>
             <tr>
-                <td>
+                <td id="create-order-form-td-disount">
+                    {render_form_field field='discount_type'}
+                </td>
+                <td class="input-group">
+
+
+                    {form_field field='discount_price'}
+                        <div class="form-group {if $error}has-error{/if}">
+                            <label for="discount_price" class="control-label">{$label} : </label>
+                            <div class="input-group">
+                                <input type="text" id="price_without_tax" name="{$name}" class="price_field automatic_price_field form-control" value="{$value}" title="{$label}" placeholder="{intl l='Discount included taxes'}">
+                                {loop type="currency" name="sale.currencies" backend_context="1" default_only=1}
+                                <span class="input-group-addon">{$SYMBOL} {intl l="or"} %</span>
+                                {/loop}
+                            </div>
+                            {if ! empty($label_attr.help)}
+                                <span class="help-block">{$label_attr.help}</span>
+                            {/if}
+                        </div>
+                    {/form_field}
+                </td>
+            </tr>
+            <tr>
+                <td id="create-order-form-td-delivery-module">
                     {form_field form=$form field='delivery-module'}
                     <div class="form-group {if $error}has-error{/if}">
                         <label for="{$label_attr.for}" class="control-label">{$label} * : </label><br />
@@ -73,7 +114,7 @@
                     </div>
                     {/form_field}
                 </td>
-                <td>
+                <td id="create-order-form-td-payment_module_id">
                     {form_field form=$form field='payment_module_id'}
                     <div class="form-group {if $error}has-error{/if}">
                         <label for="{$label_attr.for}" class="control-label">{$label} : </label>
@@ -104,4 +145,5 @@
         form_enctype       = {form_enctype form=$form}
         form_error_message = $form_error_message
     }
+
 {/form}

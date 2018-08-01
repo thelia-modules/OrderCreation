@@ -10,10 +10,15 @@ namespace OrderCreation\Form;
 
 
 use OrderCreation\OrderCreation;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Thelia\Core\Translation\Translator;
 use Thelia\Form\BaseForm;
+use Thelia\Model\Sale;
 
 class OrderCreationCreateForm extends BaseForm
 {
@@ -25,25 +30,12 @@ class OrderCreationCreateForm extends BaseForm
     const FIELD_NAME_PAYMENT_MODULE_ID = 'payment_module_id';
     const FIELD_NAME_PRODUCT_SALE_ELEMENT_ID = 'product_sale_element_id';
     const FIELD_NAME_QUANTITY = 'quantity';
+    const FIELD_DISCOUNT_TYPE = 'discount_type';
+    const FIELD_DISCOUNT_PRICE = 'discount_price';
 
     /**
      *
      * in this function you add all the fields you need for your Form.
-     * Form this you have to call add method on $this->formBuilder attribute :
-     *
-     * $this->formBuilder->add("name", "text")
-     *   ->add("email", "email", array(
-     *           "attr" => array(
-     *               "class" => "field"
-     *           ),
-     *           "label" => "email",
-     *           "constraints" => array(
-     *               new \Symfony\Component\Validator\Constraints\NotBlank()
-     *           )
-     *       )
-     *   )
-     *   ->add('age', 'integer');
-     *
      * @return null
      */
     protected function buildForm()
@@ -52,7 +44,7 @@ class OrderCreationCreateForm extends BaseForm
 
             ->add(
                 self::FIELD_NAME_CUSTOMER_ID,
-                'integer',
+                IntegerType::class,
                 [
                     'constraints' => [
                         new NotBlank()
@@ -65,7 +57,7 @@ class OrderCreationCreateForm extends BaseForm
             )
             ->add(
                 self::FIELD_NAME_DELIVERY_ADDRESS_ID,
-                'integer',
+                IntegerType::class,
                 [
                     'constraints' => [
                         new NotBlank()
@@ -78,7 +70,7 @@ class OrderCreationCreateForm extends BaseForm
             )
             ->add(
                 self::FIELD_NAME_INVOICE_ADDRESS_ID,
-                'integer',
+                IntegerType::class,
                 [
                     'constraints' => [
                         new NotBlank()
@@ -91,7 +83,7 @@ class OrderCreationCreateForm extends BaseForm
             )
             ->add(
                 self::FIELD_NAME_DELIVERY_MODULE_ID,
-                'integer',
+                IntegerType::class,
                 [
                     'constraints' => [
                         new NotBlank()
@@ -104,7 +96,7 @@ class OrderCreationCreateForm extends BaseForm
             )
             ->add(
                 self::FIELD_NAME_PAYMENT_MODULE_ID,
-                'integer',
+                IntegerType::class,
                 [
                     'constraints' => [
                         new NotBlank()
@@ -117,7 +109,7 @@ class OrderCreationCreateForm extends BaseForm
             )
             ->add(
                 self::FIELD_NAME_PRODUCT_SALE_ELEMENT_ID,
-                'collection',
+                CollectionType::class,
                 [
                     'type'         => 'number',
                     'label'        => Translator::getInstance()->trans('Product', [], OrderCreation::MESSAGE_DOMAIN),
@@ -130,7 +122,7 @@ class OrderCreationCreateForm extends BaseForm
             )
             ->add(
                 self::FIELD_NAME_QUANTITY,
-                'collection',
+                CollectionType::class,
                 [
                     'type'         => 'number',
                     'label'        => Translator::getInstance()->trans('Quantity', [], OrderCreation::MESSAGE_DOMAIN),
@@ -147,6 +139,36 @@ class OrderCreationCreateForm extends BaseForm
                             )
                         ]
                     ]
+                ]
+            )
+            ->add(
+                self::FIELD_DISCOUNT_TYPE,
+                ChoiceType::class,
+                [
+                    'constraints' => [ new NotBlank() ],
+                    'choices'     => [
+                        Sale::OFFSET_TYPE_AMOUNT     => Translator::getInstance()->trans('Constant amount', [], 'core'),
+                        Sale::OFFSET_TYPE_PERCENTAGE => Translator::getInstance()->trans('Percentage', [], 'core'),
+                    ],
+                    'required'    => true,
+                    'label'       => Translator::getInstance()->trans('Discount type', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr'  => [
+                        'for'         => self::FIELD_DISCOUNT_TYPE,
+                        'help'        => Translator::getInstance()->trans('Select the discount type that will be applied to the order price', [], OrderCreation::MESSAGE_DOMAIN),
+                    ],
+                    'attr' => []
+                ]
+            )
+            ->add(
+                self::FIELD_DISCOUNT_PRICE,
+                NumberType::class,
+                [
+                    'constraints' => [],
+                    'label'        => Translator::getInstance()->trans('Discount value', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr'   => [
+                        'for' => self::FIELD_DISCOUNT_PRICE,
+                         'help'        => Translator::getInstance()->trans('You can define here a specific discount, as a percentage or a constant amount, depending on the selected discount type.', [], OrderCreation::MESSAGE_DOMAIN),
+                    ],
                 ]
             )
         ;

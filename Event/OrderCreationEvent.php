@@ -46,6 +46,14 @@ class OrderCreationEvent extends ActionEvent
 
     protected $response;
 
+    /** @var double */
+    protected $discountPrice;
+
+    /** @var int */
+    protected $discountType;
+
+    protected $lang;
+
     public function __construct()
     {
         //
@@ -270,4 +278,58 @@ class OrderCreationEvent extends ActionEvent
     {
         return $this->response;
     }
+
+    /**
+     * @param double $price
+     * @return OrderCreationEvent
+     */
+    public function setDiscountPrice($price)
+    {
+        $this->discountPrice = $price;
+        return $this;
+    }
+
+    /**
+     * @param int $discountType
+     * @return OrderCreationEvent
+     */
+    public function setDiscountType($discountType)
+    {
+        $this->discountType = $discountType;
+        return $this;
+    }
+
+    /**
+     * @return float
+     */
+    public function getDiscountPrice()
+    {
+        return $this->discountPrice;
+    }
+
+    /**
+     * @return int
+     */
+    public function getDiscountType()
+    {
+        return $this->discountType;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLang()
+    {
+        return $this->lang;
+    }
+
+    /**
+     * @param mixed $lang
+     */
+    public function setLang($lang)
+    {
+        $this->lang = $lang;
+    }
+
+
 }
