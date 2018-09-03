@@ -26,7 +26,7 @@ class ConfigurationForm extends BaseForm
             ->add(
                 'order_creation_delivery_module_id',
                 TextType::class, [
-                    'label' => Translator::getInstance()->trans("Delivery module use to create order in back office", OrderCreation::MESSAGE_DOMAIN),
+                    'label' => Translator::getInstance()->trans("Delivery module use to create order in back office", [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => array(
                         'help' =>  $this->translator->trans('Leave blank to select delivery module on each order', [], OrderCreation::MESSAGE_DOMAIN)
                     ),

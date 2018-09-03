@@ -28,6 +28,9 @@
             <argument type="service" id="thelia.taxEngine"/>
             <tag name="kernel.event_subscriber"/>
         </service>
+
+        <service id="module.data.service" class="OrderCreation\Service\ModuleDataService">
+        </service>
     </services>
 
     <hooks>
