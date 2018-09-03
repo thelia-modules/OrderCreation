@@ -12,6 +12,7 @@ namespace OrderCreation;
 class OrderCreationConfiguration
 {
     const CONFIG_KEY_DELIVERY_MODULE_ID = 'order_creation_delivery_module_id';
+    const SOCOLISSIMO_MODE = 'order_creation_socolissimo_mode';
 
     /**
      * @param $moduleId integer | null
@@ -21,6 +22,16 @@ class OrderCreationConfiguration
         OrderCreation::setConfigValue(self::CONFIG_KEY_DELIVERY_MODULE_ID, $moduleId);
     }
 
+    public static function setSoColissimoMode($mode)
+    {
+        OrderCreation::setConfigValue(self::SOCOLISSIMO_MODE, $mode);
+    }
+
+    public static function getSoColissimoMode()
+    {
+        return OrderCreation::getConfigValue(self::SOCOLISSIMO_MODE, null);
+    }
+
     /**
      * @return integer | null
      */
@@ -28,5 +39,6 @@ class OrderCreationConfiguration
     {
         return OrderCreation::getConfigValue(self::CONFIG_KEY_DELIVERY_MODULE_ID, null);
     }
+
 
 }

@@ -8,6 +8,10 @@
                 if (!json.moduleId) {
                     return;
                 }
+
+                if(json.modeTT){
+                    $('#mode-socolissimo').append('<input type="hidden "name="socolissimo-home" value="DOM" >');
+                }
                 $('#create-order-form-td-delivery-module').hide();
                 $('#create-order-form-td-payment_module_id').colspan = 2;
             }

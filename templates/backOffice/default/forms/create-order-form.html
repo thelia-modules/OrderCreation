@@ -22,7 +22,7 @@
                 <td>
                     {form_field form=$form field='delivery_address_id'}
                     <div class="form-group {if $error}has-error{/if}">
-                        <label for="{$label_attr.for}" class="control-label">{$label} * : </label>
+                        <label for="{$label_attr.for}" class="control-label">{$label} * :</label>
 
                         <select name="{$name}" id="{$label_attr.for}" class="form-control" required="required">
                             <option value="0" {if $value == $ID}selected="selected"{/if} >{intl l="Choose" d="ordercreation"}</option>
@@ -130,6 +130,8 @@
             </tr>
             </tfoot>
         </table>
+
+        <div id="mode-socolissimo"></div>
 
     {/capture}
     {include

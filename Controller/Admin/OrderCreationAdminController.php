@@ -12,6 +12,7 @@ use OrderCreation\EventListeners\OrderCreationListener;
 use OrderCreation\Form\OrderCreationCreateForm;
 use OrderCreation\OrderCreation;
 use OrderCreation\OrderCreationConfiguration;
+use OrderCreation\Service\ModuleDataService;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\Join;
 use Propel\Runtime\Propel;
@@ -48,8 +49,17 @@ class OrderCreationAdminController extends BaseAdminController
 
     public function getConfigurationAjaxAction()
     {
+        $tabResult =[];
+
         $moduleId = OrderCreationConfiguration::getDeliveryModuleId();
-        return JsonResponse::create(["moduleId" => $moduleId]);
+        $tabResult['moduleId'] = $moduleId;
+
+        if(OrderCreationConfiguration::getSoColissimoMode()){
+            $mode = OrderCreationConfiguration::getDeliveryModuleId();
+            $tabResult['modeTT'] = $mode;
+        }
+
+        return JsonResponse::create($tabResult);
     }
 
     public function configureAction()
@@ -64,6 +74,18 @@ class OrderCreationAdminController extends BaseAdminController
             $form = $this->validateForm($configurationForm, "POST");
             $data = $form->getData();
             OrderCreationConfiguration::setDeliveryModuleId($data['order_creation_delivery_module_id']);
+
+            /** @var ModuleDataService $moduleService */
+            $moduleService = $this->container->get('module.data.service');
+
+            $codeModule = $moduleService->getModuleCode($data['order_creation_delivery_module_id']);
+
+            if(OrderCreation::SOCOLISSIMO == $codeModule){
+                OrderCreationConfiguration::setSoColissimoMode('DOM');
+            } else {
+                OrderCreationConfiguration::setSoColissimoMode('');
+            }
+
             $this->adminLogAppend(
                 OrderCreation::MESSAGE_DOMAIN . ".configuration.message",
                 AccessManager::UPDATE,

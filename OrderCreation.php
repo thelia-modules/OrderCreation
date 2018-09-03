@@ -17,4 +17,6 @@ use Thelia\Module\BaseModule;
 class OrderCreation extends BaseModule
 {
     const MESSAGE_DOMAIN = "ordercreation";
+
+    const SOCOLISSIMO = "SoColissimo";
 }
