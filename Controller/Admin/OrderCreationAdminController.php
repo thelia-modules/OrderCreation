@@ -5,6 +5,7 @@
  * Date: 28/08/2014
  * Time: 10:58
  */
+
 namespace OrderCreation\Controller\Admin;
 
 use OrderCreation\Event\OrderCreationEvent;
@@ -34,6 +35,8 @@ use Thelia\Model\Map\ProductCategoryTableMap;
 use Thelia\Model\Map\ProductI18nTableMap;
 use Thelia\Model\Map\ProductSaleElementsTableMap;
 use Thelia\Model\Map\ProductTableMap;
+use Thelia\Model\Module;
+use Thelia\Model\ModuleQuery;
 use Thelia\Model\Order;
 use Thelia\Tools\URL;
 
@@ -49,12 +52,12 @@ class OrderCreationAdminController extends BaseAdminController
 
     public function getConfigurationAjaxAction()
     {
-        $tabResult =[];
+        $tabResult = [];
 
         $moduleId = OrderCreationConfiguration::getDeliveryModuleId();
         $tabResult['moduleId'] = $moduleId;
 
-        if(OrderCreationConfiguration::getSoColissimoMode()){
+        if (OrderCreationConfiguration::getSoColissimoMode()) {
             $mode = OrderCreationConfiguration::getDeliveryModuleId();
             $tabResult['modeTT'] = $mode;
         }
@@ -64,7 +67,8 @@ class OrderCreationAdminController extends BaseAdminController
 
     public function configureAction()
     {
-        if (null !== $response = $this->checkAuth(AdminResources::MODULE, ucfirst(OrderCreation::MESSAGE_DOMAIN), AccessManager::UPDATE)) {
+        if (null !== $response = $this->checkAuth(AdminResources::MODULE, ucfirst(OrderCreation::MESSAGE_DOMAIN),
+                AccessManager::UPDATE)) {
             return $response;
         }
 
@@ -75,12 +79,18 @@ class OrderCreationAdminController extends BaseAdminController
             $data = $form->getData();
             OrderCreationConfiguration::setDeliveryModuleId($data['order_creation_delivery_module_id']);
 
-            /** @var ModuleDataService $moduleService */
-            $moduleService = $this->container->get('module.data.service');
+            /** @var Module $module */
+            $module = ModuleQuery::create()
+                ->filterById($data['order_creation_delivery_module_id'])
+                ->findOne();
 
-            $codeModule = $moduleService->getModuleCode($data['order_creation_delivery_module_id']);
+            $codeModule = "";
 
-            if(OrderCreation::SOCOLISSIMO == $codeModule){
+            if (null !== $module) {
+                $codeModule = $module->getCode();
+            }
+
+            if (OrderCreation::SOCOLISSIMO == $codeModule) {
                 OrderCreationConfiguration::setSoColissimoMode('DOM');
             } else {
                 OrderCreationConfiguration::setSoColissimoMode('');
@@ -153,8 +163,7 @@ class OrderCreationAdminController extends BaseAdminController
                 ->setQuantities($formValidate->get(OrderCreationCreateForm::FIELD_NAME_QUANTITY)->getData())
                 ->setDiscountPrice($formValidate->get(OrderCreationCreateForm::FIELD_DISCOUNT_PRICE)->getData())
                 ->setDiscountType($formValidate->get(OrderCreationCreateForm::FIELD_DISCOUNT_TYPE)->getData())
-                ->setLang($this->getCurrentEditionLang())
-            ;
+                ->setLang($this->getCurrentEditionLang());
 
             $this->dispatch(OrderCreationListener::ADMIN_ORDER_CREATE, $event);
 
@@ -190,25 +199,25 @@ class OrderCreationAdminController extends BaseAdminController
 
         // Prepare the data that will hydrate the form
         $data = array(
-            'id'        => $customer->getId(),
+            'id' => $customer->getId(),
             'firstname' => $customer->getFirstname(),
-            'lastname'  => $customer->getLastname(),
-            'email'     => $customer->getEmail(),
-            'title'     => $customer->getTitleId(),
-            'discount'  => $customer->getDiscount(),
-            'reseller'  => $customer->getReseller(),
+            'lastname' => $customer->getLastname(),
+            'email' => $customer->getEmail(),
+            'title' => $customer->getTitleId(),
+            'discount' => $customer->getDiscount(),
+            'reseller' => $customer->getReseller(),
         );
 
         if ($address !== null) {
-            $data['company']   = $address->getCompany();
-            $data['address1']  = $address->getAddress1();
-            $data['address2']  = $address->getAddress2();
-            $data['address3']  = $address->getAddress3();
-            $data['phone']     = $address->getPhone();
+            $data['company'] = $address->getCompany();
+            $data['address1'] = $address->getAddress1();
+            $data['address2'] = $address->getAddress2();
+            $data['address3'] = $address->getAddress3();
+            $data['phone'] = $address->getPhone();
             $data['cellphone'] = $address->getCellphone();
-            $data['zipcode']   = $address->getZipcode();
-            $data['city']      = $address->getCity();
-            $data['country']   = $address->getCountryId();
+            $data['zipcode'] = $address->getZipcode();
+            $data['city'] = $address->getCity();
+            $data['country'] = $address->getCountryId();
         }
 
         // A loop is used in the template
@@ -235,7 +244,7 @@ class OrderCreationAdminController extends BaseAdminController
             $pseQuery->addJoinObject($productI18nJoin, 'productI18n_JOIN');
             $pseQuery->addJoinCondition(
                 "productI18n_JOIN",
-                "product_i18n.locale = '".$this->getCurrentEditionLocale()."'",
+                "product_i18n.locale = '" . $this->getCurrentEditionLocale() . "'",
                 null,
                 null,
                 \PDO::PARAM_STR
@@ -298,7 +307,8 @@ class OrderCreationAdminController extends BaseAdminController
             }
             $address = AddressQuery::create()->findPk($addressId);
             if (null === $address) {
-                throw new Exception(Translator::getInstance()->trans("Cannot find address with id %addressId", ["%addressId" => $addressId]));
+                throw new Exception(Translator::getInstance()->trans("Cannot find address with id %addressId",
+                    ["%addressId" => $addressId]));
             }
             $order = new Order();
             $order
@@ -315,7 +325,7 @@ class OrderCreationAdminController extends BaseAdminController
                 $address->getCustomer()
             );
         } catch (\Exception $e) {
-            $response = JsonResponse::create(["error"=>$e->getMessage()], 500);
+            $response = JsonResponse::create(["error" => $e->getMessage()], 500);
         }
         return $response;
     }
