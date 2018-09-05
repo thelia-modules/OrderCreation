@@ -54,6 +54,8 @@ class OrderCreationEvent extends ActionEvent
 
     protected $lang;
 
+    protected $redirect;
+
     public function __construct()
     {
         //
@@ -329,6 +331,22 @@ class OrderCreationEvent extends ActionEvent
     public function setLang($lang)
     {
         $this->lang = $lang;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRedirect()
+    {
+        return $this->redirect;
+    }
+
+    /**
+     * @param mixed $redirect
+     */
+    public function setRedirect($redirect)
+    {
+        $this->redirect = $redirect;
     }
 
 

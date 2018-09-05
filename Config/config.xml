@@ -13,6 +13,7 @@
     <forms>
         <form name="admin.order.creation.form.configure" class="OrderCreation\Form\ConfigurationForm" />
         <form name="admin.order.creation.create.form" class="OrderCreation\Form\OrderCreationCreateForm" />
+        <form name="admin.order.redirects.payment.form" class="OrderCreation\Form\ConfigurationRedirectsPayementForm" />
     </forms>
 
     <commands>

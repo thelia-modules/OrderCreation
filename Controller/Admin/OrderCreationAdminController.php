@@ -152,6 +152,12 @@ class OrderCreationAdminController extends BaseAdminController
 
             $event = new OrderCreationEvent();
 
+            if ($formValidate->get(OrderCreationCreateForm::FIELD_CHECK_REDIRECTS_PAYMENT)->getData()) {
+                $event->setRedirect(1);
+            } else {
+                $event->setRedirect(0);
+            }
+
             $event
                 ->setContainer($this->getContainer())
                 ->setCustomerId($formValidate->get(OrderCreationCreateForm::FIELD_NAME_CUSTOMER_ID)->getData())
@@ -171,6 +177,7 @@ class OrderCreationAdminController extends BaseAdminController
                 $con->commit();
                 return $event->getResponse();
             }
+
 
             //Don't forget to fill the Customer form
             if (null != $customer = CustomerQuery::create()->findPk($formValidate->get('customer_id')->getData())) {
@@ -328,5 +335,51 @@ class OrderCreationAdminController extends BaseAdminController
             $response = JsonResponse::create(["error" => $e->getMessage()], 500);
         }
         return $response;
+    }
+
+    public function setRedirectsPayment()
+    {
+        $authFail = $this->checkAuth(AdminResources::MODULE, OrderCreation::MESSAGE_DOMAIN, AccessManager::CREATE);
+        if ($authFail !== null) {
+            return $authFail;
+        }
+
+        $configurationRPForm = $this->createForm('admin.order.redirects.payment.form');
+
+        try {
+            $form = $this->validateForm($configurationRPForm, "POST");
+
+            $data = $form->getData();
+
+            $modules = $data['order_creation_redirects_payment'];
+
+            OrderCreationConfiguration::setlistPaymentModule($modules);
+
+            return $this->generateRedirect(URL::getInstance()->absoluteUrl('/admin/module/OrderCreation'));
+
+        } catch (FormValidationException $exception) {
+            $error_msg = $this->createStandardFormValidationErrorMessage($exception);
+        }
+
+        $this->setupFormErrorContext(
+            $this->getTranslator()->trans("OrderCreation configuration", [], OrderCreation::MESSAGE_DOMAIN),
+            $error_msg,
+            $configurationRPForm,
+            $exception
+        );
+
+
+        return $this->generateRedirect(URL::getInstance()->absoluteUrl('/admin/module/OrderCreation'));
+    }
+
+    public function isRedirectable($moduleID)
+    {
+        $modules = json_decode(OrderCreationConfiguration::getlistPaymentModule());
+
+        if (in_array($moduleID, $modules)) {
+            return $this->jsonResponse(json_encode(['test' => 1]));
+        }
+
+        return $this->jsonResponse(json_encode(['test' => 0]));
     }
 }
