@@ -50,6 +50,49 @@
             </div>
         </div>
     </div>
+
+    <div class="col-md-12 general-block-decorator">
+        <div class="row">
+            <div class="col-md-12 title title-without-tabs">
+                {intl d='ordercreation.bo.default' l="Configuration de redirection de paiement"}
+            </div>
+        </div>
+
+        <form action="{url path="/admin/module/OrderCreation/configure-redirects-payment"}" method="post">
+            {form name="admin.order.redirects.payment.form"}
+
+            {form_hidden_fields form=$form}
+
+            {if $form_error}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="alert alert-danger">{$form_error_message}</div>
+                    </div>
+                </div>
+            {/if}
+
+            <div class="row">
+                <div class="col-sm-6">
+                    {form_field field="order_creation_redirects_payment"}
+                    <select name="{$name}[]" id="" multiple>
+                        {loop type="module" name="delivery-module" backend_context=1 module_type="3" active="1"}
+                            {$value}
+                            <option value="{$ID}" {if $ID|in_array:$value} selected="selected"{/if}>{$CODE} - {$TITLE}</option>
+                        {/loop}
+                    </select>
+                    {/form_field}
+                </div>
+            </div>
+
+            {include file = "includes/inner-form-toolbar.html"
+                hide_flags = true
+                page_url   = "{url path='/admin/module/OrderCreation'}"
+                close_url  = "{url path='/admin/modules'}"
+            }
+
+        </form>
+        {/form}
+    </div>
 </div>
 {block name="javascript-last-call"}
     <script type="text/javascript">

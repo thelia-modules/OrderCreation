@@ -127,6 +127,12 @@
                     </div>
                     {/form_field}
                 </td>
+                <td id="create-order-form-td-check-payment-redirect">
+                    {form_field form=$form field='redirects_payment'}
+                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
+                        <input type="checkbox" name="{$name}" id="{$label_attr.for}" />
+                    {/form_field}
+                </td>
             </tr>
             </tfoot>
         </table>

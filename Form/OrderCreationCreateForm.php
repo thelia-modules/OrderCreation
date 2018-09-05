@@ -32,6 +32,7 @@ class OrderCreationCreateForm extends BaseForm
     const FIELD_NAME_QUANTITY = 'quantity';
     const FIELD_DISCOUNT_TYPE = 'discount_type';
     const FIELD_DISCOUNT_PRICE = 'discount_price';
+    const FIELD_CHECK_REDIRECTS_PAYMENT = 'redirects_payment';
 
     /**
      *
@@ -169,6 +170,18 @@ class OrderCreationCreateForm extends BaseForm
                         'for' => self::FIELD_DISCOUNT_PRICE,
                          'help'        => Translator::getInstance()->trans('You can define here a specific discount, as a percentage or a constant amount, depending on the selected discount type.', [], OrderCreation::MESSAGE_DOMAIN),
                     ],
+                ]
+            )
+            ->add(
+                self::FIELD_CHECK_REDIRECTS_PAYMENT,
+                "checkbox",
+                [
+                    "label" => $this->translator->trans('Auto redirects payment', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label_attr' => [
+                        'for' => self::FIELD_CHECK_REDIRECTS_PAYMENT,
+                    ],
+                    "required" => false,
+                    "value" => false,
                 ]
             )
         ;

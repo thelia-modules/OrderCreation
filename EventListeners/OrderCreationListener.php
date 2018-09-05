@@ -56,8 +56,7 @@ class OrderCreationListener implements EventSubscriberInterface
         Request $request,
         EventDispatcherInterface $eventDispatcher,
         TaxEngine $taxEngine
-    )
-    {
+    ) {
         $this->request = $request;
         $this->eventDispatcher = $eventDispatcher;
         $this->taxEngine = $taxEngine;
@@ -125,8 +124,7 @@ class OrderCreationListener implements EventSubscriberInterface
             ->setStatusId(OrderStatusQuery::getNotPaidStatus()->getId())
             ->setLangId($event->getLang()->getDefaultLanguage()->getId())
             ->setChoosenDeliveryAddress($deliveryAddress)
-            ->setChoosenInvoiceAddress($invoiceAddress)
-        ;
+            ->setChoosenInvoiceAddress($invoiceAddress);
 
         //If someone is connected in FRONT, stock it
         $oldCustomer = $this->request->getSession()->getCustomerUser();
@@ -236,15 +234,19 @@ class OrderCreationListener implements EventSubscriberInterface
             $orderEvent->setPlacedOrder($orderManualEvent->getPlacedOrder());
 
             /* call pay method */
-            $payEvent = new OrderPaymentEvent($orderManualEvent->getPlacedOrder());
 
-            $this->eventDispatcher->dispatch(TheliaEvents::MODULE_PAY, $payEvent);
+            if (1 == $event->getRedirect()) {
+                $payEvent = new OrderPaymentEvent($orderManualEvent->getPlacedOrder());
 
-            if ($payEvent->hasResponse()) {
-                $event->setResponse($payEvent->getResponse());
+                $this->eventDispatcher->dispatch(TheliaEvents::MODULE_PAY, $payEvent);
+
+                if ($payEvent->hasResponse()) {
+                    $event->setResponse($payEvent->getResponse());
+                }
+
+                $event->setPlacedOrder($orderManualEvent->getPlacedOrder());
             }
 
-            $event->setPlacedOrder($orderManualEvent->getPlacedOrder());
             $this->eventDispatcher->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
 
         } catch (\Exception $e) {
@@ -292,7 +294,7 @@ class OrderCreationListener implements EventSubscriberInterface
                 $couponServiceId = 'thelia.coupon.type.remove_x_amount';
                 break;
             case Sale::OFFSET_TYPE_PERCENTAGE:
-                $discountValue = max(0.00, min(100.00,  $event->getDiscountPrice()));
+                $discountValue = max(0.00, min(100.00, $event->getDiscountPrice()));
                 $effects = ['percentage' => $discountValue];
                 $couponServiceId = 'thelia.coupon.type.remove_x_percent';
                 break;

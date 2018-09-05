@@ -30,4 +30,11 @@
         <default key="_controller">OrderCreation\Controller\Admin\OrderCreationAdminController::updateCountryInRequest</default>
     </route>
 
+    <route id="admin.order.creation.redirectable.payment.request" path="/admin/module/OrderCreation/redirectable-payment/{moduleID}">
+        <default key="_controller">OrderCreation\Controller\Admin\OrderCreationAdminController::isRedirectable</default>
+    </route>
+
+    <route id="admin.order.creation.set.redirects" path="/admin/module/OrderCreation/configure-redirects-payment" methods="post">
+        <default key="_controller">OrderCreation\Controller\Admin\OrderCreationAdminController::setRedirectsPayment</default>
+    </route>
 </routes>

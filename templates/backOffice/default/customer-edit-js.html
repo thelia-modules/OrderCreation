@@ -19,6 +19,22 @@
 
         window.onload = function () {
             $("#body-order-cart .category-list").trigger("change");
+
+            $.ajax({
+                url      : url+moduleID,
+                type     : 'get',
+                dataType : 'json',
+
+                success  : function(json) {
+                    if(json.test == 1){
+                        $('#create-order-form-td-check-payment-redirect').show();
+                    } else{
+                        $('#create-order-form-td-check-payment-redirect').hide();
+                    }
+                }
+            });
+
+
         }
     });
 
@@ -29,6 +45,27 @@
         $.get("{url path='/admin/module/OrderCreation/add-item'}/"+nb_products, function(data){
             $('#body-order-cart').append(data);
         },'html');
+    });
+
+    $('#create-order-form-td-payment_module_id').on('change',function(clickEvent){
+        moduleID = $(this).find('select').val();
+
+        url = '{url path="/admin/module/OrderCreation/redirectable-payment/"}';
+
+        $.ajax({
+            url      : url+moduleID,
+            type     : 'get',
+            dataType : 'json',
+
+            success  : function(json) {
+                if(json.test == 1){
+                    $('#create-order-form-td-check-payment-redirect').show();
+                } else{
+                    $('#create-order-form-td-check-payment-redirect').hide();
+                }
+            }
+        });
+
     });
 
 
