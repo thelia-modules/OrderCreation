@@ -1,54 +1,65 @@
 {form name="admin.order.creation.create.form"}
-{if !isset($productId)}
+{if !isset($pseId)}
+    {assign var="pseId" value="0"}
     {assign var="productId" value="0"}
     {assign var="categoryId" value="0"}
     {assign var="quantity" value="1"}
 {else}
-    {loop name="cat-product" type="category" product="$productId" limit=1}
-        {assign var="categoryId" value="$ID"}
+    {loop type="product_sale_elements" name="prod" id=$pseId}
+        {assign var="productId" value=$PRODUCT_ID}
+        {loop name="cat-product" type="category" product=$PRODUCT_ID visible='*' limit=1}
+            {assign var="categoryId" value="$ID"}
+        {/loop}
     {/loop}
 {/if}
 <tr id="tr-{$position}" class="title-without-tabs">
     <td colspan="2">
         <table class="table table-striped table-condensed">
-            <caption>
-                <div class="col-md-11"></div>
-                <div class="col-md-1">
-                    <a class="btn btn-default btn-xs item-ajax-delete" data-toggle="modal" title="{intl l='Remove' d='ordercreation'}" data-target="tr-{$position}" href="#">
-                        <i class="glyphicon glyphicon-trash"></i>
-                    </a>
-                </div>
-            </caption>
             <tbody>
             <tr>
-                <td>
-                    <label for="category{$position}" class="control-label">{intl l="Category" d="ordercreation"}</label>
-                    <select id="category{$position}"
-                            required="required"
-                            class="form-control category-list"
-                            data-product="{$productId}"
-                            data-target="item{$position}"
-                            data-destination="tr-item{$position}">
-                        <option>{intl l="Choose"}</option>
-                        {loop name="cat-parent" type="category-tree" category="0" visible="*" product="$productId"}
-                        <option  value="{$ID}" {if $categoryId == $ID}selected="selected"{/if} style="padding-left: {3 + $LEVEL * 20}px">{$TITLE}</option>
-                        {/loop}
-                    </select>
+                <td colspan="2">
+                    <div class="input-group">
+                        <select id="category{$position}"
+                                required="required"
+                                class="form-control category-list"
+                                data-pse-id="{$pseId}"
+                                data-target="item{$position}"
+                                data-destination="tr-item{$position}">
+                                <option>{intl l="Select product category" d="ordercreation.bo.default"}</option>
+                                {loop name="cat-parent" type="category-tree" category="0" visible="*" product=$productId}
+                                    <option value="{$ID}"{if $categoryId == $ID} selected="selected"{/if}>{option_offset l=$LEVEL+1 label=$TITLE}</option>
+                                {/loop}
+                        </select>
+                        <span class="input-group-btn">
+                            <a class="btn btn-danger item-ajax-delete" data-toggle="modal" title="{intl l='Remove this product from order' d="ordercreation.bo.default"}" data-target="tr-{$position}" href="#">
+                                <i class="glyphicon glyphicon-remove"></i>
+                            </a>
+                        </span>
+                    </div>
                 </td>
-                <td></td>
             </tr>
+
             <tr id="tr-item{$position}" class="hide">
                 <td>
-                    {form_field form=$form field='product_sale_element_id' value_key=$position}
-                        <label for="item{$position}" class="control-label">{$label}</label>
-                        <select id="item{$position}" class="form-control" name="{$name}"></select>
+                    {form_field field='product_sale_element_id' value_key=$position}
+                        <select required id="item{$position}" class="form-control" name="{$name}"></select>
                     {/form_field}
                 </td>
-                <td>
-                    {form_field form=$form field='quantity' value_key=$position}
-                        <label for="quantity{$position}" class="control-label">{$label}</label>
-                        <input type="text" class="form-control" name="{$name}" value="{$quantity}">
+                <td class="text-nowrap">
+                    {form_field field='quantity' value_key=$position}
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <label for="quantity{$position}">{$label}</label>
+                                <input id="quantity{$position}" required type="text" class="form-control" name="{$name}" value="{$quantity}">
+                            </div>
+                        </div>
                     {/form_field}
+                </td>
+            </tr>
+
+            <tr id="err_tr-item{$position}" class="hide">
+                <td colspan="2">
+                    <div class="alert alert-warning" style="margin-bottom:0">{intl l="There's no product in this category" d="ordercreation.bo.default"}</div>
                 </td>
             </tr>
             </tbody>

@@ -8,7 +8,6 @@
 
 namespace OrderCreation\EventListeners;
 
-
 use OrderCreation\Event\OrderCreationEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -149,7 +148,6 @@ class OrderCreationListener implements EventSubscriberInterface
                             ->filterByProductSaleElementsId($productSaleElements->getId())
                             ->filterByCurrencyId($currency->getDefaultCurrency()->getId())
                             ->findOne()) {
-
                         $cartItem = new CartItem();
                         $cartItem
                             ->setCart($cart)
@@ -166,7 +164,6 @@ class OrderCreationListener implements EventSubscriberInterface
                         $this->eventDispatcher->dispatch(self::ADMIN_ORDER_BEFORE_ADD_CART, $event);
 
                         $cartItem->save();
-
                     }
                 }
             }
@@ -248,11 +245,9 @@ class OrderCreationListener implements EventSubscriberInterface
             }
 
             $this->eventDispatcher->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
-
         } catch (\Exception $e) {
             throw $e;
         } finally {
-
             //Reconnect the front user
             if ($oldCustomer != null) {
                 $this->request->getSession()->setCustomerUser($oldCustomer);

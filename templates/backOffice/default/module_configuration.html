@@ -34,7 +34,7 @@
                                         <div class="form-group {if $error}has-error{/if}">
                                             <label for="{$label_attr.for}" class="control-label">{$label} : </label>
                                             <input type="hidden" name="{$name}" id="delivery-module" value="{$value}" />
-                                            <select id="delivery_module_id_select">
+                                            <select class="form-control" id="delivery_module_id_select">
                                                 <option value="">{intl d='ordercreation.bo.default' l='No default delivery module (default)'}</option>
                                                 {loop type="module" name="delivery-module" backend_context=1 module_type="2"}
                                                     <option value="{$ID}" {if $value == $ID}selected="selected"{/if}>{$CODE} - {$TITLE}</option>
@@ -74,12 +74,13 @@
             <div class="row">
                 <div class="col-sm-6">
                     {form_field field="order_creation_redirects_payment"}
-                    <select name="{$name}[]" id="" multiple>
-                        {loop type="module" name="delivery-module" backend_context=1 module_type="3" active="1"}
-                            {$value}
-                            <option value="{$ID}" {if $ID|in_array:$value} selected="selected"{/if}>{$CODE} - {$TITLE}</option>
-                        {/loop}
-                    </select>
+                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
+                        <select name="{$name}[]" id="" multiple class="form-control">
+                            {loop type="module" name="delivery-module" backend_context=1 module_type="3" active="1"}
+                                {$value}
+                                <option value="{$ID}" {if $ID|in_array:$value|default:[]} selected="selected"{/if}>{$CODE} - {$TITLE}</option>
+                            {/loop}
+                        </select>
                     {/form_field}
                 </div>
             </div>

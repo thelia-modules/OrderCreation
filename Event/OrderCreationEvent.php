@@ -8,7 +8,6 @@
 
 namespace OrderCreation\Event;
 
-
 use Thelia\Core\Event\ActionEvent;
 
 class OrderCreationEvent extends ActionEvent
@@ -348,6 +347,4 @@ class OrderCreationEvent extends ActionEvent
     {
         $this->redirect = $redirect;
     }
-
-
 }

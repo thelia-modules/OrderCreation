@@ -39,7 +39,7 @@ class OrderCreationConfiguration
 
     public static function getlistPaymentModule()
     {
-        return OrderCreation::getConfigValue(self::LIST_PAYMENT_MODULE, null);
+        return OrderCreation::getConfigValue(self::LIST_PAYMENT_MODULE, json_encode([]));
     }
 
     /**
@@ -49,6 +49,4 @@ class OrderCreationConfiguration
     {
         return OrderCreation::getConfigValue(self::CONFIG_KEY_DELIVERY_MODULE_ID, null);
     }
-
-
 }

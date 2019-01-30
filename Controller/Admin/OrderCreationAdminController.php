@@ -13,7 +13,6 @@ use OrderCreation\EventListeners\OrderCreationListener;
 use OrderCreation\Form\OrderCreationCreateForm;
 use OrderCreation\OrderCreation;
 use OrderCreation\OrderCreationConfiguration;
-use OrderCreation\Service\ModuleDataService;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\Join;
 use Propel\Runtime\Propel;
@@ -67,8 +66,7 @@ class OrderCreationAdminController extends BaseAdminController
 
     public function configureAction()
     {
-        if (null !== $response = $this->checkAuth(AdminResources::MODULE, ucfirst(OrderCreation::MESSAGE_DOMAIN),
-                AccessManager::UPDATE)) {
+        if (null !== $response = $this->checkAuth(AdminResources::MODULE, ucfirst(OrderCreation::MESSAGE_DOMAIN), AccessManager::UPDATE)) {
             return $response;
         }
 
@@ -134,12 +132,14 @@ class OrderCreationAdminController extends BaseAdminController
         if (null !== $response) {
             return $response;
         }
+
         $con = Propel::getConnection(OrderTableMap::DATABASE_NAME);
         $con->beginTransaction();
 
         $form = new OrderCreationCreateForm($this->getRequest());
 
         $moduleId = OrderCreationConfiguration::getDeliveryModuleId();
+
         if ($moduleId !== null) {
             $orderDeliveryParameters = $form->getRequest()->request->get("thelia_order_delivery");
             $orderDeliveryParameters[OrderCreationCreateForm::FIELD_NAME_DELIVERY_MODULE_ID] = $moduleId;
@@ -147,7 +147,6 @@ class OrderCreationAdminController extends BaseAdminController
         }
 
         try {
-
             $formValidate = $this->validateForm($form);
 
             $event = new OrderCreationEvent();
@@ -178,57 +177,22 @@ class OrderCreationAdminController extends BaseAdminController
                 return $event->getResponse();
             }
 
-
-            //Don't forget to fill the Customer form
-            if (null != $customer = CustomerQuery::create()->findPk($formValidate->get('customer_id')->getData())) {
-                $customerForm = $this->hydrateCustomerForm($customer);
-                $this->getParserContext()->addForm($customerForm);
-            }
-
             $con->commit();
-
         } catch (\Exception $e) {
             $con->rollBack();
+
             $error_message = $e->getMessage();
+
             $form->setErrorMessage($error_message);
+
             $this->getParserContext()
                 ->addForm($form)
                 ->setGeneralError($error_message);
+
             return $this->generateErrorRedirect($form);
         }
+
         return $this->generateSuccessRedirect($form);
-    }
-
-    protected function hydrateCustomerForm(Customer $customer)
-    {
-        // Get default adress of the customer
-        $address = $customer->getDefaultAddress();
-
-        // Prepare the data that will hydrate the form
-        $data = array(
-            'id' => $customer->getId(),
-            'firstname' => $customer->getFirstname(),
-            'lastname' => $customer->getLastname(),
-            'email' => $customer->getEmail(),
-            'title' => $customer->getTitleId(),
-            'discount' => $customer->getDiscount(),
-            'reseller' => $customer->getReseller(),
-        );
-
-        if ($address !== null) {
-            $data['company'] = $address->getCompany();
-            $data['address1'] = $address->getAddress1();
-            $data['address2'] = $address->getAddress2();
-            $data['address3'] = $address->getAddress3();
-            $data['phone'] = $address->getPhone();
-            $data['cellphone'] = $address->getCellphone();
-            $data['zipcode'] = $address->getZipcode();
-            $data['city'] = $address->getCity();
-            $data['country'] = $address->getCountryId();
-        }
-
-        // A loop is used in the template
-        return new CustomerUpdateForm($this->getRequest(), 'form', $data);
     }
 
     /**
@@ -241,60 +205,39 @@ class OrderCreationAdminController extends BaseAdminController
         $result = array();
 
         if ($categoryId !== null) {
-
-            $pseQuery = ProductSaleElementsQuery::create();
-
-            $productJoin = new Join(ProductSaleElementsTableMap::PRODUCT_ID, ProductTableMap::ID, Criteria::INNER_JOIN);
-            $pseQuery->addJoinObject($productJoin);
-
-            $productI18nJoin = new Join(ProductTableMap::ID, ProductI18nTableMap::ID, Criteria::INNER_JOIN);
-            $pseQuery->addJoinObject($productI18nJoin, 'productI18n_JOIN');
-            $pseQuery->addJoinCondition(
-                "productI18n_JOIN",
-                "product_i18n.locale = '" . $this->getCurrentEditionLocale() . "'",
-                null,
-                null,
-                \PDO::PARAM_STR
-            );
-
-            $productCategoryJoin = new Join(
-                ProductTableMap::ID,
-                ProductCategoryTableMap::PRODUCT_ID,
-                Criteria::INNER_JOIN
-            );
-            $pseQuery->addJoinObject($productCategoryJoin, "productCategory_JOIN");
-            $pseQuery->addJoinCondition(
-                "productCategory_JOIN",
-                "product_category.default_category = ?",
-                1,
-                null,
-                \PDO::PARAM_INT
-            );
-
-            $pseQuery->addJoinCondition(
-                "productCategory_JOIN",
-                "product_category.category_id = ?",
-                $categoryId,
-                null,
-                \PDO::PARAM_INT
-            );
-
-            $pseQuery->addAscendingOrderByColumn('product_i18n.TITLE');
-
-            $pseQuery->withColumn("product_i18n.title", "PRODUCT_TITLE");
-            $pseQuery->withColumn("product.id", "PRODUCT_ID");
-
-            $pses = $pseQuery->find();
+            $pses = ProductSaleElementsQuery::create()
+                ->useProductQuery()
+                    ->useProductCategoryQuery()
+                        ->filterByDefaultCategory(true)
+                        ->filterByCategoryId($categoryId)
+                    ->endUse()
+                    ->useI18nQuery($this->getCurrentEditionLocale())
+                    ->endUse()
+                ->endUse()
+                ->withColumn(ProductTableMap::ID, 'product_id')
+                ->withColumn(ProductTableMap::REF, 'product_ref')
+                ->withColumn(ProductI18nTableMap::TITLE, 'product_title')
+                ->orderBy('product_title')
+                ->find()
+            ;
 
             /** @var \Thelia\Model\ProductSaleElements $pse */
             foreach ($pses as $pse) {
-                $result[] = array(
-                    'id' => $pse->getId(),
-                    'product_id' => $pse->getVirtualColumns()["PRODUCT_ID"],
-                    'ref' => $pse->getRef(),
-                    'title' => $pse->getVirtualColumns()["PRODUCT_TITLE"],
-                    'quantity' => $pse->getQuantity()
-                );
+                $productRef = $pse->getVirtualColumn('product_ref');
+
+                if (! isset($result[$productRef])) {
+                    $result[$productRef] = [
+                        'title'      => $pse->getVirtualColumn('product_title'),
+                        'product_id' => $pse->getVirtualColumn('product_id'),
+                        'pse_list'   => []
+                    ];
+                }
+
+                $result[$productRef]['pse_list'][] = [
+                    'id'         => $pse->getId(),
+                    'ref'        => $pse->getRef(),
+                    'quantity'   => $pse->getQuantity()
+                ];
             }
         }
 
@@ -314,8 +257,12 @@ class OrderCreationAdminController extends BaseAdminController
             }
             $address = AddressQuery::create()->findPk($addressId);
             if (null === $address) {
-                throw new Exception(Translator::getInstance()->trans("Cannot find address with id %addressId",
-                    ["%addressId" => $addressId]));
+                throw new Exception(
+                    $this->getTranslator()->trans(
+                        "Cannot find address with id %addressId",
+                        ["%addressId" => $addressId]
+                    )
+                );
             }
             $order = new Order();
             $order
@@ -356,7 +303,6 @@ class OrderCreationAdminController extends BaseAdminController
             OrderCreationConfiguration::setlistPaymentModule($modules);
 
             return $this->generateRedirect(URL::getInstance()->absoluteUrl('/admin/module/OrderCreation'));
-
         } catch (FormValidationException $exception) {
             $error_msg = $this->createStandardFormValidationErrorMessage($exception);
         }

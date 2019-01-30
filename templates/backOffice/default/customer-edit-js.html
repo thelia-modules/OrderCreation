@@ -1,231 +1,216 @@
 <script>
     $(function() {
         $.ajax({
-            url      : '{url path="/admin/module/OrderCreation/config/ajax"}',
-            type     : 'get',
-            dataType : 'json',
-            success  : function(json) {
+            url: '{url path="/admin/module/OrderCreation/config/ajax"}',
+            type: 'get',
+            dataType: 'json',
+            success: function (json) {
                 if (!json.moduleId) {
                     return;
                 }
 
-                if(json.modeTT){
-                    $('#mode-socolissimo').append('<input type="hidden "name="socolissimo-home" value="DOM" >');
+                if (json.modeTT) {
+                    $('#mode-socolissimo').append('<input type="hidden" name="socolissimo-home" value="DOM" >');
                 }
                 $('#create-order-form-td-delivery-module').hide();
-                $('#create-order-form-td-payment_module_id').colspan = 2;
             }
         });
 
-        window.onload = function () {
-            $("#body-order-cart .category-list").trigger("change");
+
+        function updateRedirectableStatus() {
+            moduleID = $('select', '#create-order-form-td-payment_module_id').val();
+
+            url = '{url path="/admin/module/OrderCreation/redirectable-payment/"}';
 
             $.ajax({
-                url      : url+moduleID,
-                type     : 'get',
-                dataType : 'json',
+                url: url + moduleID,
+                type: 'get',
+                dataType: 'json',
 
-                success  : function(json) {
-                    if(json.test == 1){
+                success: function (json) {
+                    if (json.test === 1) {
                         $('#create-order-form-td-check-payment-redirect').show();
-                    } else{
+                    } else {
                         $('#create-order-form-td-check-payment-redirect').hide();
                     }
                 }
             });
 
-
         }
-    });
 
-
-    //Automatic product add during order creation
-    $('#add-cart-item').click(function(ev) {
-        var nb_products = $(".category-list").length;
-        $.get("{url path='/admin/module/OrderCreation/add-item'}/"+nb_products, function(data){
-            $('#body-order-cart').append(data);
-        },'html');
-    });
-
-    $('#create-order-form-td-payment_module_id').on('change',function(clickEvent){
-        moduleID = $(this).find('select').val();
-
-        url = '{url path="/admin/module/OrderCreation/redirectable-payment/"}';
-
-        $.ajax({
-            url      : url+moduleID,
-            type     : 'get',
-            dataType : 'json',
-
-            success  : function(json) {
-                if(json.test == 1){
-                    $('#create-order-form-td-check-payment-redirect').show();
-                } else{
-                    $('#create-order-form-td-check-payment-redirect').hide();
-                }
-            }
+        //Automatic product add during order creation
+        $('#add-cart-item').click(function (ev) {
+            $('#empty-order-row').hide();
+            var nb_products = $(".category-list").length;
+            $.get("{url path='/admin/module/OrderCreation/add-item'}/" + nb_products, function (data) {
+                $('#body-order-cart').append(data);
+            }, 'html');
         });
 
-    });
-
-
-    $('#body-order-cart').on('change', '.category-list', function(clickEvent){
-        var target_id = $(this).data('target');
-        var target_destination_id = $(this).data('destination');
-        var target_product_id = $(this).data('product');
-        $.ajax({
-            url      : '{url path="/admin/module/OrderCreation/0/list-products/"}' + $(this).val() + '.xml',
-            type     : 'get',
-            dataType : 'json',
-            success  : function(json) {
-                $('#'+target_id).empty();
-
-                var have_content = false;
-                var oldValue = null;
-                var isOptGroupOpen = false;
-                var listOfOptions = "";
-                var selectedAttr = "";
-                $.each(json, function(idx, value) {
-
-                    if (oldValue == null) {
-                        oldValue = value;
-                    } else {
-
-                        selectedAttr = target_product_id == oldValue.id ? "selected " : "";
-
-                        if (oldValue.product_id == value.product_id) {
-
-                            if (isOptGroupOpen == false) {
-                                listOfOptions +=
-                                    '<optgroup label="' + oldValue.title + '">' +
-                                        '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>'
-                                ;
-
-                                isOptGroupOpen = true;
-                            } else {
-                                listOfOptions +=
-                                    '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>'
-                                ;
-                            }
-                        } else {
-                            if (isOptGroupOpen == true) {
-                                listOfOptions +=
-                                    '</optgroup>'
-                                ;
-                            }
-
-                            listOfOptions +=
-                                '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.title + '(' + oldValue.quantity + ')' + '</option>'
-                            ;
-                        }
-
-                        oldValue = value;
-
-                    }
-
-
-
-                    //$('#'+target_id).append($('<option>').text(value.title+" ("+value.quantity+")").attr('value', value.id));
-                    have_content = true;
-                });
-
-
-                selectedAttr = target_product_id == oldValue.id ? "selected " : "";
-
-                if (isOptGroupOpen == true) {
-                    listOfOptions +=
-                            '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.ref + '(' + oldValue.quantity + ')' + '</option>' +
-                        '</optgroup>'
-                    ;
-                } else {
-                    listOfOptions +=
-                        '<option value="' + oldValue.id + '"' + selectedAttr+ '>' + oldValue.title + '(' + oldValue.quantity + ')' + '</option>'
-                    ;
-                }
-                $('#'+target_id).append(listOfOptions);
-                if (have_content) {
-                    $('#'+target_destination_id).removeClass('hide');
-                }
-                else {
-                    $('#'+target_destination_id).addClass('hide');
-                }
-            }
+        $('#create-order-form-td-payment_module_id').on('change', function (clickEvent) {
+            updateRedirectableStatus();
         });
-    });
 
-    $('#body-order-cart').on('click', '.item-ajax-delete', function(clickEvent){
-        $('#'+$(this).data('target')).remove();
-    });
 
-    $('#type_order_form').change(function(ev) {
-        if($(this).val() == 2){
-            $('#type_order_info').removeClass('hide');
-        }else{
-            $('#type_order_info').addClass('hide');
+        function makeOption(value, target_pse_id, title)
+        {
+            return '<option value="' + value.id + '"'
+                + (target_pse_id === value.id ? "selected " : "")
+                + '>'
+                + (title !== undefined ? title : value.ref) + ' ({intl l='stock:' d="ordercreation.bo.default" js=1} ' + value.quantity + ')'
+                + '</option>';
         }
-    });
 
-    var prefixUrl = document.location.href.split('/admin');
+        $('#body-order-cart').on('change', '.category-list', function (clickEvent) {
+            var target_id = $(this).data('target');
+            var target_destination_id = $(this).data('destination');
+            var target_pse_id = $(this).data('pse-id');
 
-    $('#delivery_address_id_form').on('change', function(){
-
-        if ($(this).val() > 0) {
-            $('#list-delivery').addClass('loading');
-
-            //update the country in the request
             $.ajax({
-                type: "POST",
-                url: prefixUrl[0] + "/admin/module/OrderCreation/update/country/request",
-                data: {
-                    address_id: $(this).val()
-                }
-            })
-            .done(function(response){
-                $.ajax({
-                    type: "GET",
-                    url: prefixUrl[0] + "/order/deliveryModuleList"
-                })
-                .done(function(response){
-                    $('#list-delivery').removeClass('loading');
-                    $('#list-delivery').html(response);
+                url: '{url path="/admin/module/OrderCreation/0/list-products/"}' + $(this).val() + '.xml',
+                type: 'get',
+                dataType: 'json',
+                success: function (json) {
+                    var listOfOptions = '';
 
-                    $('#list-delivery input.delivery-method').each(function(){
-                        if ($(this).is(':checked')) {
-                            $('#delivery-module').val($(this).val());
+                    $.each(json, function (product_ref, product) {
+                        if (product.pse_list.length === 1) {
+                            listOfOptions += makeOption(product.pse_list[0], target_pse_id, product.title);
+                        } else {
+                            listOfOptions += '<optgroup label="'+ product.title + ' (' + product_ref +')">';
+
+                            $.each(product.pse_list, function (pidx, pse) {
+                                listOfOptions += makeOption(pse, target_pse_id);
+                            });
+
+                            listOfOptions += '</optgroup>';
                         }
                     });
 
-                    //clear both between all radio button
-                    $('#list-delivery .radio').each(function(){
-                        $(this).css('clear', 'both');
-                    });
-                })
-                .error(function(error){
-                    $('#list-delivery').removeClass('loading');
-                    if (typeof(error.statusTexddt) != 'undefined') {
-                        $('#list-delivery').html('<div class="alert alert-danger">' + error.statusText + '</div>');
+                    var $targetId = $('#' + target_id);
+
+                    $targetId.empty();
+
+                    if (listOfOptions !== '') {
+                        listOfOptions =
+                            '<option value="">{intl l="Please select a product" d="ordercreation.bo.default"}</option>'
+                            + listOfOptions
+                        ;
+
+                        $targetId.append(listOfOptions);
+
+                        $('#' + target_destination_id).removeClass('hide');
+                        $('#err_' + target_destination_id).addClass('hide');
+                    } else {
+                        $('#' + target_destination_id).addClass('hide');
+                        $('#err_' + target_destination_id).removeClass('hide');
                     }
-                });
-            })
-            .error(function(error){
-                $('#list-delivery').removeClass('loading');
-                if (typeof(error.statusTexddt) != 'undefined') {
-                    $('#list-delivery').html('<div class="alert alert-danger">' + error.statusText + '</div>');
                 }
             });
-        } else {
-            $('#delivery-module').val(0);
-            $('#list-delivery').removeClass('loading');
-            $('#list-delivery').html(
-                '<div class="alert alert-danger">' +
-                    "{intl l='Choose a delivery address first' d='ordercreation'}" +
-                '</div>'
-            );
-        }
+        });
 
+        $('#body-order-cart').on('click', '.item-ajax-delete', function (clickEvent) {
+            $('#' + $(this).data('target')).remove();
+
+            if ($(".category-list").length === 0) {
+                $('#empty-order-row').show();
+            }
+        });
+
+        $('#type_order_form').change(function (ev) {
+            if ($(this).val() === 2) {
+                $('#type_order_info').removeClass('hide');
+            } else {
+                $('#type_order_info').addClass('hide');
+            }
+        });
+
+        var prefixUrl = document.location.href.split('/admin');
+
+        var $listDelivery = $('#list-delivery');
+
+        $('#delivery_address_id_form').change(function() {
+            if ($(this).val() !== '') {
+                $listDelivery.addClass('loading');
+
+                // update the country in the request
+                $.ajax({
+                    type: "POST",
+                    url: prefixUrl[0] + "/admin/module/OrderCreation/update/country/request",
+                    data: {
+                        address_id: $(this).val()
+                    }
+                })
+                    .done(function (response) {
+                        $.ajax({
+                            type: "GET",
+                            url: prefixUrl[0] + "/order/deliveryModuleList"
+                        })
+                        .done(function (response) {
+                            $listDelivery.removeClass('loading');
+                            $listDelivery.html(response);
+
+                            $('#list-delivery input.delivery-method').each(function () {
+                                if ($(this).is(':checked')) {
+                                    $('#delivery-module').val($(this).val());
+                                }
+                            });
+
+                            //clear both between all radio button
+                            $('#list-delivery .radio').each(function () {
+                                $(this).css('clear', 'both');
+                            });
+                        })
+                        .error(function (error) {
+                            $listDelivery.removeClass('loading');
+                            if (typeof (error.statusTexddt) != 'undefined') {
+                                $listDelivery.html('<div class="alert alert-danger">' + error.statusText + '</div>');
+                            }
+                        });
+                    })
+                    .error(function (error) {
+                        $listDelivery.removeClass('loading');
+                        if (typeof (error.statusTexddt) != 'undefined') {
+                            $listDelivery.html('<div class="alert alert-danger">' + error.statusText + '</div>');
+                        }
+                    });
+            } else {
+                $('#delivery-module').val(0);
+                $listDelivery.removeClass('loading');
+                $listDelivery.html(
+                    '<div class="alert alert-danger">' +
+                    "{intl l='Choose a delivery address first' d='ordercreation' js=1}" +
+                    '</div>'
+                );
+            }
+        });
+
+        $listDelivery.on('change', '.delivery-method', function () {
+            $('#delivery-module').val($(this).val());
+        });
+
+        $('form', '#order_create_dialog').submit(function (ev) {
+            if ($(".category-list").length === 0) {
+                ev.preventDefault();
+
+                alert("{intl l='Please add at lead one product to this order.' d='ordercreation' js=1}");
+            }
+
+            if ($(".js-change-delivery-method:checked").length === 0) {
+                ev.preventDefault();
+
+                alert("{intl l='You should select a shipping method to create an order.' d='ordercreation' js=1}");
+            }
+        });
+
+
+        // Update shipping mode list
+        $("#delivery_address_id_form").trigger("change");
+
+        // Update all products in cart
+        $('.category-list').trigger("change");
+
+        // Update rediect to payment checkbox
+        updateRedirectableStatus();
     });
-
-    $('#list-delivery').on('change', '.delivery-method', function(){
-        $('#delivery-module').val($(this).val());
-    })
 </script>

@@ -2,17 +2,17 @@
 <module>
     <fullnamespace>OrderCreation\OrderCreation</fullnamespace>
     <descriptive locale="en_US">
-        <title>Order creation in BackOffice</title>
+        <title>Order creation in back-office</title>
     </descriptive>
     <descriptive locale="fr_FR">
-        <title>Creation de commande dans le BackOffice</title>
+        <title>Creation de commande depuis l'administration</title>
     </descriptive>
-    <version>1.7.0</version>
+    <version>1.8.0</version>
     <author>
         <name>gbarral</name>
         <email>gbarral@openstudio.fr</email>
     </author>
     <type>classic</type>
     <thelia>2.1.1</thelia>
-    <stability>other</stability>
+    <stability>prod</stability>
 </module>

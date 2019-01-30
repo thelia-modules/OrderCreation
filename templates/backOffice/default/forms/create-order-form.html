@@ -9,149 +9,144 @@
         {/form_field}
 
         {form_field form=$form field='error_url'}
-            <input type="hidden" name="{$name}" value="{url path={navigate to="current"}}"/>
+            <input type="hidden" name="{$name}" value="{url path="/admin/customer/update" customer_id=$customer_id}"/>
         {/form_field}
 
         {form_field form=$form field='success_url'}
-            <input type="hidden" name="{$name}" value="{url path={navigate to="current"}}"/>
+            <input type="hidden" name="{$name}" value="{url path="/admin/customer/update" customer_id=$customer_id}#order-creation-block"/>
         {/form_field}
 
-        <table class="table">
-            <thead>
-            <tr>
-                <td>
-                    {form_field form=$form field='delivery_address_id'}
-                    <div class="form-group {if $error}has-error{/if}">
-                        <label for="{$label_attr.for}" class="control-label">{$label} * :</label>
-
-                        <select name="{$name}" id="{$label_attr.for}" class="form-control" required="required">
-                            <option value="0" {if $value == $ID}selected="selected"{/if} >{intl l="Choose" d="ordercreation"}</option>
-                            {loop type="address" name="address-delivery" customer=$customer_id}
+        <div class="row">
+            <div class="col-md-6">
+                {custom_render_form_field field='delivery_address_id'}
+                    <select {form_field_attributes field='delivery_address_id'}>
+                        <option value="" {if $value == $ID}selected="selected"{/if} >{intl l="Choose" d="ordercreation.bo.default"}</option>
+                        {loop type="address" name="address-delivery" customer=$customer_id}
                             <option value="{$ID}" {if $value == $ID}selected="selected"{/if}>{$LABEL}</option>
-                            {/loop}
-                        </select>
-                    </div>
-                    {/form_field}
-                </td>
-                <td>
-                    {form_field form=$form field='invoice_address_id'}
-                    <div class="form-group {if $error}has-error{/if}">
-                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
+                        {/loop}
+                    </select>
+                {/custom_render_form_field}
+            </div>
 
-                        <select name="{$name}" id="{$label_attr.for}" class="form-control">
-                            {loop type="address" name="address-invoice" customer=$customer_id}
+            <div class="col-md-6">
+                {custom_render_form_field field='invoice_address_id'}
+                    <select {form_field_attributes field='invoice_address_id'}>
+                        <option value="" {if $value == $ID}selected="selected"{/if} >{intl l="Choose" d="ordercreation.bo.default"}</option>
+                        {loop type="address" name="address-invoice" customer=$customer_id}
                             <option value="{$ID}" {if $value == $ID}selected="selected"{/if}>{$LABEL}</option>
-                            {/loop}
-                        </select>
-                    </div>
-                    {/form_field}
-                </td>
-            </tr>
-            </thead>
+                        {/loop}
+                    </select>
+                {/custom_render_form_field}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                {render_form_field field='discount_type'}
+            </div>
+            <div class="col-md-6">
+                {custom_render_form_field field='discount_price'}
+                <div class="input-group">
+                    <input {form_field_attributes field='discount_price'}>
+                    {loop type="currency" name="sale.currencies" backend_context=1 default_only=1}
+                        <span class="input-group-addon">{$SYMBOL} {intl l="or" d="ordercreation.bo.default"} %</span>
+                    {/loop}
+                </div>
+                {/custom_render_form_field}
+            </div>
+        </div>
+
+        <table class="table table-condensed">
+            <caption><label>{intl l="List or ordered products" d="ordercreation.bo.default"}</label></caption>
             <tbody id="body-order-cart">
-            {$productQuantities = []}
-            {form_field form=$form field='quantity'}
-                {$productQuantities = $value}
-            {/form_field}
-            {form_field form=$form field='product_sale_element_id'}
-                {assign var='indexProduct' value=0}
-                {foreach $value as $productId}
-                    {include file="../ajax/add-cart-item.html" productId=$productId position=$indexProduct quantity=$productQuantities[$indexProduct]}
-                    {assign var='indexProduct' value=$indexProduct+1}
-                {/foreach}
-            {/form_field}
+                {$productQuantities = []}
+                {form_field field='quantity'}
+                    {$productQuantities = $value}
+                {/form_field}
+
+                {$indexProduct=0}
+
+                {form_field field='product_sale_element_id'}
+                    {foreach $value as $pseId}
+                        {include
+                            file="../ajax/add-cart-item.html"
+                            productId=$productId
+                            position=$indexProduct
+                            quantity=$productQuantities[$indexProduct]
+                        }
+
+                        {$indexProduct = $indexProduct+1}
+                    {/foreach}
+                {/form_field}
+
+                {if $indexProduct == 0}
+                    <tr id="empty-order-row">
+                        <td colspan="2">
+                            <div class="alert alert-info" style="margin-bottom: 0">
+                                {intl l="There is no products in this order."  d='ordercreation.bo.default'}
+                            </div>
+                        </td>
+                    </tr>
+                {/if}
             </tbody>
+
             <tfoot>
-            <tr>
-                <td colspan="2">
-                    <a id="add-cart-item" class="btn btn-default btn-primary action-btn" title="{intl l='Add product' d='ordercreation'}" href="#" data-toggle="modal">
-                        <span>{intl l="Add product" d="ordercreation"}</span>
-                    </a>
-                </td>
-            </tr>
-            <tr>
-                <td id="create-order-form-td-disount">
-                    {render_form_field field='discount_type'}
-                </td>
-                <td class="input-group">
-
-
-                    {form_field field='discount_price'}
-                        <div class="form-group {if $error}has-error{/if}">
-                            <label for="discount_price" class="control-label">{$label} : </label>
-                            <div class="input-group">
-                                <input type="text" id="price_without_tax" name="{$name}" class="price_field automatic_price_field form-control" value="{$value}" title="{$label}" placeholder="{intl l='Discount included taxes'}">
-                                {loop type="currency" name="sale.currencies" backend_context="1" default_only=1}
-                                <span class="input-group-addon">{$SYMBOL} {intl l="or"} %</span>
-                                {/loop}
-                            </div>
-                            {if ! empty($label_attr.help)}
-                                <span class="help-block">{$label_attr.help}</span>
-                            {/if}
-                        </div>
-                    {/form_field}
-                </td>
-            </tr>
-            <tr>
-                <td id="create-order-form-td-delivery-module">
-                    {form_field form=$form field='delivery-module'}
-                    <div class="form-group {if $error}has-error{/if}">
-                        <label for="{$label_attr.for}" class="control-label">{$label} * : </label><br />
-                        <input type="hidden" name="{$name}" id="delivery-module" value="" />
-                        <div id="list-delivery">
-                            <div class="alert alert-danger">
-                                {intl l="Choose a delivery address first" d="ordercreation"}
-                            </div>
-                        </div>
-                        <!--
-                        <select name="{$name}" id="{$label_attr.for}" class="form-control" required="required">
-                            <option>{intl l="Choose" d="ordercreation"}</option>
-                            {loop type="module" name="module-delivery" module_type="2" active="1"}
-                            <option value="{$ID}">{$TITLE}</option>
-                            {/loop}
-                        </select>
-                        -->
-                    </div>
-                    {/form_field}
-                </td>
-                <td id="create-order-form-td-payment_module_id">
-                    {form_field form=$form field='payment_module_id'}
-                    <div class="form-group {if $error}has-error{/if}">
-                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
-
-                        <select name="{$name}" id="{$label_attr.for}" class="form-control">
-                            {loop type="module" name="module-payment" module_type="3" active="1"}
-                            <option value="{$ID}">{$TITLE}</option>
-                            {/loop}
-                        </select>
-                    </div>
-                    {/form_field}
-                </td>
-                <td id="create-order-form-td-check-payment-redirect">
-                    {form_field form=$form field='redirects_payment'}
-                        <label for="{$label_attr.for}" class="control-label">{$label} : </label>
-                        <input type="checkbox" name="{$name}" id="{$label_attr.for}" />
-                    {/form_field}
-                </td>
-            </tr>
+                <tr>
+                    <td colspan="2" class="text-right">
+                        <a id="add-cart-item" class="btn btn-default btn-primary action-btn" title="{intl l='Add product to this order' d='ordercreation.bo.default'}" href="#" data-toggle="modal">
+                            <span>{intl l="Add product to order" d="ordercreation.bo.default"}</span>
+                        </a>
+                    </td>
+                </tr>
             </tfoot>
         </table>
+
+        <div class="row">
+            <div class="col-md-12">
+                {custom_render_form_field field='delivery-module'}
+                    <div id="list-delivery">
+                        <div class="alert alert-danger">
+                            {intl l="Please select a delivery adresse to display shipping options" d="ordercreation.bo.default"}
+                        </div>
+                    </div>
+                {/custom_render_form_field}
+            </div>
+
+            <div class="col-md-6">
+                <div id="create-order-form-td-payment_module_id">
+                    {custom_render_form_field field='payment_module_id'}
+                        <select {form_field_attributes field='payment_module_id'}>
+                            {loop type="module" name="module-payment" module_type="3" active="1"}
+                                <option value="{$ID}">{$TITLE}</option>
+                            {/loop}
+                        </select>
+                    {/custom_render_form_field}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div "id="create-order-form-td-check-payment-redirect">
+                    {render_form_field field='redirects_payment'}
+                </div>
+            </div>
+        </div>
 
         <div class="hidden" id="mode-socolissimo"></div>
 
     {/capture}
+
     {include
         file = "includes/generic-create-dialog.html"
 
         dialog_id    = "order_create_dialog"
-        dialog_title = {intl l="Generate a new order" d="ordercreation"}
+        dialog_title = {intl l="Generate a new order" d="ordercreation.bo.default"}
         dialog_body  = {$smarty.capture.order_create_dialog nofilter}
 
         dialog_ok_label     = {intl l="Save"}
+        ok_button_id        = "submit_order_creation"
 
         form_action        = {url path='/admin/module/OrderCreation/order/create'}
         form_enctype       = {form_enctype form=$form}
         form_error_message = $form_error_message
     }
-
 {/form}

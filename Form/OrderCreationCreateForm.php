@@ -8,7 +8,6 @@
 
 namespace OrderCreation\Form;
 
-
 use OrderCreation\OrderCreation;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
@@ -16,13 +15,11 @@ use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\NotBlank;
-use Thelia\Core\Translation\Translator;
 use Thelia\Form\BaseForm;
 use Thelia\Model\Sale;
 
 class OrderCreationCreateForm extends BaseForm
 {
-
     const FIELD_NAME_CUSTOMER_ID = 'customer_id';
     const FIELD_NAME_DELIVERY_ADDRESS_ID = 'delivery_address_id';
     const FIELD_NAME_INVOICE_ADDRESS_ID = 'invoice_address_id';
@@ -34,11 +31,6 @@ class OrderCreationCreateForm extends BaseForm
     const FIELD_DISCOUNT_PRICE = 'discount_price';
     const FIELD_CHECK_REDIRECTS_PAYMENT = 'redirects_payment';
 
-    /**
-     *
-     * in this function you add all the fields you need for your Form.
-     * @return null
-     */
     protected function buildForm()
     {
         $this->formBuilder
@@ -50,7 +42,7 @@ class OrderCreationCreateForm extends BaseForm
                     'constraints' => [
                         new NotBlank()
                     ],
-                    'label' => Translator::getInstance()->trans("Customer", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label' => $this->translator->trans("Customer", [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => [
                         'for' => self::FIELD_NAME_CUSTOMER_ID . '_form'
                     ]
@@ -63,7 +55,7 @@ class OrderCreationCreateForm extends BaseForm
                     'constraints' => [
                         new NotBlank()
                     ],
-                    'label' => Translator::getInstance()->trans("Delivery address", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label' => $this->translator->trans("Delivery address", [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => [
                         'for' => self::FIELD_NAME_DELIVERY_ADDRESS_ID . '_form'
                     ]
@@ -76,7 +68,7 @@ class OrderCreationCreateForm extends BaseForm
                     'constraints' => [
                         new NotBlank()
                     ],
-                    'label' => Translator::getInstance()->trans("Invoice address", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label' => $this->translator->trans("Invoice address", [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => [
                         'for' => self::FIELD_NAME_INVOICE_ADDRESS_ID . '_form'
                     ]
@@ -89,7 +81,7 @@ class OrderCreationCreateForm extends BaseForm
                     'constraints' => [
                         new NotBlank()
                     ],
-                    'label' => Translator::getInstance()->trans("Transport solution", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label' => $this->translator->trans("Transport solution", [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => [
                         'for' => self::FIELD_NAME_DELIVERY_MODULE_ID . '_form'
                     ]
@@ -102,7 +94,7 @@ class OrderCreationCreateForm extends BaseForm
                     'constraints' => [
                         new NotBlank()
                     ],
-                    'label' => Translator::getInstance()->trans("Payment solution", [], OrderCreation::MESSAGE_DOMAIN),
+                    'label' => $this->translator->trans("Payment solution", [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => [
                         'for' => self::FIELD_NAME_PAYMENT_MODULE_ID . '_form'
                     ]
@@ -113,7 +105,7 @@ class OrderCreationCreateForm extends BaseForm
                 CollectionType::class,
                 [
                     'type'         => 'number',
-                    'label'        => Translator::getInstance()->trans('Product', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label'        => $this->translator->trans('Product', [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr'   => [
                         'for' => self::FIELD_NAME_PRODUCT_SALE_ELEMENT_ID . '_form'
                     ],
@@ -126,7 +118,7 @@ class OrderCreationCreateForm extends BaseForm
                 CollectionType::class,
                 [
                     'type'         => 'number',
-                    'label'        => Translator::getInstance()->trans('Quantity', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label'        => $this->translator->trans('Quantity', [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr'   => [
                         'for' => self::FIELD_NAME_QUANTITY . '_form'
                     ],
@@ -148,14 +140,14 @@ class OrderCreationCreateForm extends BaseForm
                 [
                     'constraints' => [ new NotBlank() ],
                     'choices'     => [
-                        Sale::OFFSET_TYPE_AMOUNT     => Translator::getInstance()->trans('Constant amount', [], 'core'),
-                        Sale::OFFSET_TYPE_PERCENTAGE => Translator::getInstance()->trans('Percentage', [], 'core'),
+                        Sale::OFFSET_TYPE_AMOUNT     => $this->translator->trans('Constant amount', [], 'core'),
+                        Sale::OFFSET_TYPE_PERCENTAGE => $this->translator->trans('Percentage', [], 'core'),
                     ],
                     'required'    => true,
-                    'label'       => Translator::getInstance()->trans('Discount type', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label'       => $this->translator->trans('Discount type', [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr'  => [
                         'for'         => self::FIELD_DISCOUNT_TYPE,
-                        'help'        => Translator::getInstance()->trans('Select the discount type that will be applied to the order price', [], OrderCreation::MESSAGE_DOMAIN),
+                        'help'        => $this->translator->trans('Select the discount type that will be applied to the order price', [], OrderCreation::MESSAGE_DOMAIN),
                     ],
                     'attr' => []
                 ]
@@ -164,11 +156,16 @@ class OrderCreationCreateForm extends BaseForm
                 self::FIELD_DISCOUNT_PRICE,
                 NumberType::class,
                 [
+                    'required' => false,
                     'constraints' => [],
-                    'label'        => Translator::getInstance()->trans('Discount value', [], OrderCreation::MESSAGE_DOMAIN),
+                    'label'        => $this->translator->trans('Discount value', [], OrderCreation::MESSAGE_DOMAIN),
+                    'attr'         => [
+                        'placeholder' => $this->translator->trans('Discount included taxes', [], OrderCreation::MESSAGE_DOMAIN)
+                    ],
                     'label_attr'   => [
                         'for' => self::FIELD_DISCOUNT_PRICE,
-                         'help'        => Translator::getInstance()->trans('You can define here a specific discount, as a percentage or a constant amount, depending on the selected discount type.', [], OrderCreation::MESSAGE_DOMAIN),
+                         'help'  => $this->translator->trans('You can define here a specific discount, as a percentage or a constant amount, depending on the selected discount type.', [], OrderCreation::MESSAGE_DOMAIN),
+
                     ],
                 ]
             )
@@ -176,9 +173,11 @@ class OrderCreationCreateForm extends BaseForm
                 self::FIELD_CHECK_REDIRECTS_PAYMENT,
                 "checkbox",
                 [
-                    "label" => $this->translator->trans('Auto redirects payment', [], OrderCreation::MESSAGE_DOMAIN),
+                    "label" => $this->translator->trans('Go to payment page after order creation', [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => [
                         'for' => self::FIELD_CHECK_REDIRECTS_PAYMENT,
+                        'help' => $this->translator->trans('Check this box if you want to pay the order with the selected payment module ', [], OrderCreation::MESSAGE_DOMAIN),
+
                     ],
                     "required" => false,
                     "value" => false,
