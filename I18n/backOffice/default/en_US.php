@@ -1,0 +1,26 @@
+<?php
+
+return array(
+    'Add product to order' => 'Add product to order',
+    'Add product to this order' => 'Add product to this order',
+    'Choose' => 'Choose',
+    'Choose a delivery address first' => 'Choose a delivery address first',
+    'Configuration de redirection de paiement' => 'Configuration de redirection de paiement',
+    'Configuration du module de création de commande en BO' => 'Configuration du module de création de commande en BO',
+    'Generate a new order' => 'Generate a new order',
+    'Generate a new order for this customer' => 'Generate a new order for this customer',
+    'List or ordered products' => 'List of ordered products',
+    'No default delivery module (default)' => 'No default delivery module (default)',
+    'Please add at lead one product to this order.' => 'Please add at least one product to this order.',
+    'Please select a delivery adresse to display shipping options' => 'Please select a delivery adresse to display shipping options',
+    'Please select a product' => 'Please select a product',
+    'Remove this product from order' => 'Remove this product from order',
+    'Save' => 'Save',
+    'Select product category' => 'Select product category',
+    'There is no products in this order.' => 'There is no products in this order.',
+    'There\'s no product in this category' => 'There\'s no product in this category',
+    'You can create here an order for this customer right from your back-office.' => 'You can create here an order for this customer right from your back-office.',
+    'You should select a shipping method to create an order.' => 'You should select a shipping method to create an order.',
+    'or' => 'or',
+    'stock:' => 'stock:',
+);

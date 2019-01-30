@@ -253,14 +253,21 @@ class OrderCreationAdminController extends BaseAdminController
         try {
             $addressId = $this->getRequest()->request->get('address_id');
             if (null === $addressId) {
-                throw new InvalidArgumentException(Translator::getInstance()->trans("You must pass address_id"));
+                throw new InvalidArgumentException(
+                    $this->getTranslator()->trans(
+                        "You must pass address_id",
+                        [],
+                        OrderCreation::MESSAGE_DOMAIN
+                    )
+                );
             }
             $address = AddressQuery::create()->findPk($addressId);
             if (null === $address) {
                 throw new Exception(
                     $this->getTranslator()->trans(
                         "Cannot find address with id %addressId",
-                        ["%addressId" => $addressId]
+                        ["%addressId" => $addressId],
+                        OrderCreation::MESSAGE_DOMAIN
                     )
                 );
             }

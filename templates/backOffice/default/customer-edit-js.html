@@ -179,7 +179,7 @@
                 $listDelivery.removeClass('loading');
                 $listDelivery.html(
                     '<div class="alert alert-danger">' +
-                    "{intl l='Choose a delivery address first' d='ordercreation' js=1}" +
+                    "{intl l='Choose a delivery address first' d='ordercreation.bo.default' js=1}" +
                     '</div>'
                 );
             }
@@ -193,13 +193,13 @@
             if ($(".category-list").length === 0) {
                 ev.preventDefault();
 
-                alert("{intl l='Please add at lead one product to this order.' d='ordercreation' js=1}");
+                alert("{intl l='Please add at lead one product to this order.' d='ordercreation.bo.default' js=1}");
             }
 
             if ($(".js-change-delivery-method:checked").length === 0) {
                 ev.preventDefault();
 
-                alert("{intl l='You should select a shipping method to create an order.' d='ordercreation' js=1}");
+                alert("{intl l='You should select a shipping method to create an order.' d='ordercreation.bo.default' js=1}");
             }
         });
 
