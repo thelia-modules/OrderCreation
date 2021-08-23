@@ -9,6 +9,7 @@
 namespace OrderCreation\Form;
 
 use OrderCreation\OrderCreation;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -104,7 +105,7 @@ class OrderCreationCreateForm extends BaseForm
                 self::FIELD_NAME_PRODUCT_SALE_ELEMENT_ID,
                 CollectionType::class,
                 [
-                    'type'         => 'number',
+                    'entry_type'         => NumberType::class,
                     'label'        => $this->translator->trans('Product', [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr'   => [
                         'for' => self::FIELD_NAME_PRODUCT_SALE_ELEMENT_ID . '_form'
@@ -117,14 +118,14 @@ class OrderCreationCreateForm extends BaseForm
                 self::FIELD_NAME_QUANTITY,
                 CollectionType::class,
                 [
-                    'type'         => 'number',
+                    'entry_type'         => NumberType::class,
                     'label'        => $this->translator->trans('Quantity', [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr'   => [
                         'for' => self::FIELD_NAME_QUANTITY . '_form'
                     ],
                     'allow_add'    => true,
                     'allow_delete' => true,
-                    'options'      => [
+                    'entry_options'      => [
                         'constraints' => [
                             new NotBlank(),
                             new GreaterThan(
@@ -140,8 +141,8 @@ class OrderCreationCreateForm extends BaseForm
                 [
                     'constraints' => [ new NotBlank() ],
                     'choices'     => [
-                        Sale::OFFSET_TYPE_AMOUNT     => $this->translator->trans('Constant amount', [], 'core'),
-                        Sale::OFFSET_TYPE_PERCENTAGE => $this->translator->trans('Percentage', [], 'core'),
+                        $this->translator->trans('Constant amount', [], 'core') => Sale::OFFSET_TYPE_AMOUNT,
+                        $this->translator->trans('Percentage', [], 'core') => Sale::OFFSET_TYPE_PERCENTAGE,
                     ],
                     'required'    => true,
                     'label'       => $this->translator->trans('Discount type', [], OrderCreation::MESSAGE_DOMAIN),
@@ -171,7 +172,7 @@ class OrderCreationCreateForm extends BaseForm
             )
             ->add(
                 self::FIELD_CHECK_REDIRECTS_PAYMENT,
-                "checkbox",
+                CheckboxType::class,
                 [
                     "label" => $this->translator->trans('Go to payment page after order creation', [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => [
@@ -189,7 +190,7 @@ class OrderCreationCreateForm extends BaseForm
     /**
      * @return string the name of you form. This name must be unique
      */
-    public function getName()
+    public static function getName()
     {
         //This name MUST be the same that the form OrderDelivery (because of ajax delivery module return)
         return "thelia_order_delivery";

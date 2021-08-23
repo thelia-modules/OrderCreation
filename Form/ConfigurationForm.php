@@ -23,11 +23,17 @@ class ConfigurationForm extends BaseForm
                 [
                     'label' => $this->translator->trans("Delivery module use to create order in back office", [], OrderCreation::MESSAGE_DOMAIN),
                     'label_attr' => array(
+                        'for' => 'order_creation_delivery_module_id',
                         'help' =>  $this->translator->trans('Leave blank to select delivery module on each order', [], OrderCreation::MESSAGE_DOMAIN)
                     ),
                     'data' => OrderCreation::getConfigValue('order_creation_delivery_module_id'),
                     'constraints' => [],
                 ]
             );
+    }
+
+    public static function getName()
+    {
+        return "admin_order_creation_form_configure";
     }
 }

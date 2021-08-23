@@ -5,13 +5,13 @@
             {intl l="You can create here an order for this customer right from your back-office." d="ordercreation.bo.default"}
         </div>
         <div class="row">
-            {if $order_creation_error}
+            {if $order_creation_error|default:null}
             <div class="col-md-12">
                 <div class="alert alert-danger">{$order_creation_error}</div>
             </div>
             {/if}
 
-            {if $order_creation_success}
+            {if $order_creation_success|default:null}
             <div class="col-md-12">
                 <div class="alert alert-success">{$order_creation_success}</div>
             </div>

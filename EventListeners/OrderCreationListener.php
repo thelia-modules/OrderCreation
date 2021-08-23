@@ -11,13 +11,14 @@ namespace OrderCreation\EventListeners;
 use OrderCreation\Event\OrderCreationEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Thelia\Core\Event\Coupon\CouponConsumeEvent;
 use Thelia\Core\Event\Coupon\CouponCreateOrUpdateEvent;
 use Thelia\Core\Event\Order\OrderEvent;
 use Thelia\Core\Event\Order\OrderManualEvent;
 use Thelia\Core\Event\Order\OrderPaymentEvent;
 use Thelia\Core\Event\TheliaEvents;
-use Thelia\Core\HttpFoundation\Request;
 use Thelia\Model\Base\AddressQuery;
 use Thelia\Model\Base\CustomerQuery;
 use Thelia\Model\Base\ProductSaleElementsQuery;
@@ -52,11 +53,11 @@ class OrderCreationListener implements EventSubscriberInterface
      * @param TaxEngine $taxEngine
      */
     public function __construct(
-        Request $request,
+        RequestStack $requestStack,
         EventDispatcherInterface $eventDispatcher,
         TaxEngine $taxEngine
     ) {
-        $this->request = $request;
+        $this->request = $requestStack->getCurrentRequest();
         $this->eventDispatcher = $eventDispatcher;
         $this->taxEngine = $taxEngine;
     }
@@ -135,7 +136,7 @@ class OrderCreationListener implements EventSubscriberInterface
             $cart = new Cart();
             $cart->setToken($cartToken)
                 ->setCustomer($customer)
-                ->setCurrency($currency->getDefaultCurrency())
+                ->setCurrency($currency::getDefaultCurrency())
                 ->save();
 
             foreach ($pseIds as $key => $pseId) {
@@ -146,7 +147,7 @@ class OrderCreationListener implements EventSubscriberInterface
                     /** @var \Thelia\Model\ProductPrice $productPrice */
                     if (null != $productPrice = ProductPriceQuery::create()
                             ->filterByProductSaleElementsId($productSaleElements->getId())
-                            ->filterByCurrencyId($currency->getDefaultCurrency()->getId())
+                            ->filterByCurrencyId($currency::getDefaultCurrency()->getId())
                             ->findOne()) {
                         $cartItem = new CartItem();
                         $cartItem
@@ -161,7 +162,7 @@ class OrderCreationListener implements EventSubscriberInterface
 
                         $event->setCartItem($cartItem);
 
-                        $this->eventDispatcher->dispatch(self::ADMIN_ORDER_BEFORE_ADD_CART, $event);
+                        $this->eventDispatcher->dispatch($event, self::ADMIN_ORDER_BEFORE_ADD_CART);
 
                         $cartItem->save();
                     }
@@ -187,11 +188,11 @@ class OrderCreationListener implements EventSubscriberInterface
             $orderEvent->setDeliveryModule($deliveryModule->getId());
             $orderEvent->setPaymentModule($paymentModule->getId());
 
-            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_DELIVERY_ADDRESS, $orderEvent);
-            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_INVOICE_ADDRESS, $orderEvent);
-            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_POSTAGE, $orderEvent);
-            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_DELIVERY_MODULE, $orderEvent);
-            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_SET_PAYMENT_MODULE, $orderEvent);
+            $this->eventDispatcher->dispatch($orderEvent, TheliaEvents::ORDER_SET_DELIVERY_ADDRESS);
+            $this->eventDispatcher->dispatch($orderEvent, TheliaEvents::ORDER_SET_INVOICE_ADDRESS);
+            $this->eventDispatcher->dispatch($orderEvent, TheliaEvents::ORDER_SET_POSTAGE);
+            $this->eventDispatcher->dispatch($orderEvent, TheliaEvents::ORDER_SET_DELIVERY_MODULE);
+            $this->eventDispatcher->dispatch($orderEvent, TheliaEvents::ORDER_SET_PAYMENT_MODULE);
 
             //DO NOT FORGET THAT THE DISCOUNT ORDER HAS TO BE PLACED IN CART
             if ($this->request->getSession()->getSessionCart($this->eventDispatcher) != null) {
@@ -206,7 +207,7 @@ class OrderCreationListener implements EventSubscriberInterface
                 /** @noinspection PhpParamsInspection */
                 $couponConsumeEvent = new CouponConsumeEvent($coupon->getCode());
                 // Dispatch Event to the Action
-                $this->eventDispatcher->dispatch(TheliaEvents::COUPON_CONSUME, $couponConsumeEvent);
+                $this->eventDispatcher->dispatch($couponConsumeEvent, TheliaEvents::COUPON_CONSUME);
             }
 
             $orderManualEvent = new OrderManualEvent(
@@ -219,11 +220,11 @@ class OrderCreationListener implements EventSubscriberInterface
 
             $this->request->getSession()->set("thelia.cart_id", $cart->getId());
 
-            $this->eventDispatcher->dispatch(TheliaEvents::ORDER_CREATE_MANUAL, $orderManualEvent);
+            $this->eventDispatcher->dispatch($orderManualEvent, TheliaEvents::ORDER_CREATE_MANUAL);
 
             $this->eventDispatcher->dispatch(
-                TheliaEvents::ORDER_BEFORE_PAYMENT,
-                new OrderEvent($orderManualEvent->getPlacedOrder())
+                new OrderEvent($orderManualEvent->getPlacedOrder()),
+                TheliaEvents::ORDER_BEFORE_PAYMENT
             );
 
             /* but memorize placed order */
@@ -235,7 +236,7 @@ class OrderCreationListener implements EventSubscriberInterface
             if (1 == $event->getRedirect()) {
                 $payEvent = new OrderPaymentEvent($orderManualEvent->getPlacedOrder());
 
-                $this->eventDispatcher->dispatch(TheliaEvents::MODULE_PAY, $payEvent);
+                $this->eventDispatcher->dispatch($payEvent, TheliaEvents::MODULE_PAY);
 
                 if ($payEvent->hasResponse()) {
                     $event->setResponse($payEvent->getResponse());
@@ -244,7 +245,7 @@ class OrderCreationListener implements EventSubscriberInterface
                 $event->setPlacedOrder($orderManualEvent->getPlacedOrder());
             }
 
-            $this->eventDispatcher->dispatch(self::ADMIN_ORDER_AFTER_CREATE_MANUAL, $event);
+            $this->eventDispatcher->dispatch($event, self::ADMIN_ORDER_AFTER_CREATE_MANUAL);
         } catch (\Exception $e) {
             throw $e;
         } finally {
@@ -319,7 +320,7 @@ class OrderCreationListener implements EventSubscriberInterface
             1
         );
 
-        $this->eventDispatcher->dispatch(TheliaEvents::COUPON_CREATE, $couponEvent);
+        $this->eventDispatcher->dispatch($couponEvent, TheliaEvents::COUPON_CREATE);
 
         return $couponEvent->getCouponModel();
     }
