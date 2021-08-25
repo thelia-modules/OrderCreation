@@ -7,12 +7,12 @@
     <descriptive locale="fr_FR">
         <title>Creation de commande depuis l'administration</title>
     </descriptive>
-    <version>1.8.0</version>
+    <version>2.0.0</version>
     <author>
         <name>gbarral</name>
         <email>gbarral@openstudio.fr</email>
     </author>
     <type>classic</type>
-    <thelia>2.1.1</thelia>
+    <thelia>2.5.0</thelia>
     <stability>prod</stability>
 </module>

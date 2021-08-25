@@ -29,6 +29,9 @@ class ConfigurationRedirectsPayementForm extends BaseForm
                         [],
                         OrderCreation::MESSAGE_DOMAIN
                     ),
+                    'label_attr' => array(
+                        'for' => 'order_creation_redirects_payment',
+                    ),
                     'expanded' => true,
                     'multiple' => true,
                     'choices' => $this->getPaymentModuleList(),
@@ -49,7 +52,7 @@ class ConfigurationRedirectsPayementForm extends BaseForm
 
             /** @var Module $module */
             foreach ($modules->getData() as $module) {
-                $tabChoices[$module->getId()] = $module->getCode();
+                $tabChoices[$module->getCode()] = $module->getId();
             }
 
             return $tabChoices;
@@ -63,5 +66,10 @@ class ConfigurationRedirectsPayementForm extends BaseForm
         $listModules = OrderCreationConfiguration::getlistPaymentModule();
 
         return json_decode($listModules);
+    }
+
+    public static function getName()
+    {
+        return "admin_order_redirects_payment_form";
     }
 }

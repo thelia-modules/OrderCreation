@@ -1,4 +1,4 @@
-{form name="admin.order.creation.create.form"}
+{form name="admin_order_creation_create_form"}
     {* Capture the dialog body, to pass it to the generic dialog *}
     {capture "order_create_dialog"}
 
@@ -70,8 +70,8 @@
                     {foreach $value as $pseId}
                         {include
                             file="../ajax/add-cart-item.html"
-                            productId=$productId
-                            position=$indexProduct
+                            productId=$productId|default:null
+                            position=$indexProduct|default:null
                             quantity=$productQuantities[$indexProduct]
                         }
 

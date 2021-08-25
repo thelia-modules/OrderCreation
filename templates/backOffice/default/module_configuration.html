@@ -9,7 +9,7 @@
         <div class="form-container">
             <div class="row">
                 <div class="col-md-12">
-                    {form name="admin.order.creation.form.configure"}
+                    {form name="admin_order_creation_form_configure"}
                         <form action="{url path="/admin/module/OrderCreation/configure"}" method="post">
                             {form_hidden_fields form=$form}
 
@@ -59,7 +59,7 @@
         </div>
 
         <form action="{url path="/admin/module/OrderCreation/configure-redirects-payment"}" method="post">
-            {form name="admin.order.redirects.payment.form"}
+            {form name="admin_order_redirects_payment_form"}
 
             {form_hidden_fields form=$form}
 
@@ -77,7 +77,6 @@
                         <label for="{$label_attr.for}" class="control-label">{$label} : </label>
                         <select name="{$name}[]" id="" multiple class="form-control">
                             {loop type="module" name="delivery-module" backend_context=1 module_type="3" active="1"}
-                                {$value}
                                 <option value="{$ID}" {if $ID|in_array:$value|default:[]} selected="selected"{/if}>{$CODE} - {$TITLE}</option>
                             {/loop}
                         </select>
