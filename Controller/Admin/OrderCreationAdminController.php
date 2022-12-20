@@ -69,7 +69,7 @@ class OrderCreationAdminController extends BaseAdminController
             $tabResult['modeTT'] = $mode;
         }
 
-        return JsonResponse::create($tabResult);
+        return new JsonResponse($tabResult);
     }
 
     /**
@@ -267,14 +267,14 @@ class OrderCreationAdminController extends BaseAdminController
      * @return \Symfony\Component\HttpFoundation\Response|static
      * @Route("/update/country/request", name="_country_request", methods="POST")
      */
-    public function updateCountryInRequest(RequestStack $requestStack)
+    public function updateCountryInRequest(RequestStack $requestStack, Translator $translator)
     {
-        $response = JsonResponse::create([], 200);
+        $response = new JsonResponse([], 200);
         try {
-            $addressId = $this->getRequest()->request->get('address_id');
+            $addressId = $requestStack->getCurrentRequest()->get('address_id');
             if (null === $addressId) {
                 throw new InvalidArgumentException(
-                    $this->getTranslator()->trans(
+                    $translator->trans(
                         "You must pass address_id",
                         [],
                         OrderCreation::MESSAGE_DOMAIN
@@ -306,7 +306,7 @@ class OrderCreationAdminController extends BaseAdminController
                 $address->getCustomer()
             );
         } catch (\Exception $e) {
-            $response = JsonResponse::create(["error" => $e->getMessage()], 500);
+            $response = new JsonResponse(["error" => $e->getMessage()], 500);
         }
         return $response;
     }
