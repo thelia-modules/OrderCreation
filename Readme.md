@@ -1,6 +1,6 @@
 # Order Creation
 
-Create order from admin of Thelia2 (2.1.1+)
+Create order from admin of Thelia2 (2.5.0+)
 
 ## Installation
 
@@ -14,7 +14,7 @@ Create order from admin of Thelia2 (2.1.1+)
 Add it in your main thelia composer.json file
 
 ```
-composer require thelia/order-creation-module:~1.0
+composer require thelia/order-creation-module:~2.0
 ```
 
 ## Usage
